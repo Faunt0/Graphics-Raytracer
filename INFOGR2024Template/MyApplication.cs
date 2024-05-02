@@ -8,16 +8,19 @@ namespace Template
         // member variables
         public Surface screen;
         public Surface debug;
+        public Raytracer rt;
         public readonly bool isDebugging = true;
         // constructor
         public MyApplication(Surface screen, Surface debug)
         {
             this.screen = screen;
-            this.debug = debug; 
+            this.debug = debug;
         }
         // initialize
         public void Init()
         {
+            rt = new Raytracer(screen);
+            rt.Debug();
             screen.Plot(1, 2, 0xff0000);
         }
         // tick: renders one frame
@@ -26,21 +29,10 @@ namespace Template
             //debug.Clear(0);
             //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            screen.Print("hello world", 2, 2, 0xffffff);
-            screen.Line(2, 20, 160, 20, 0xff0000);
-        }
-
-        public int TX(float x)
-        {
-            float x1_s = x + 5;
-            float x1_sc = x1_s * screen.width / 4;
-            return (int)x1_sc;
-        }
-        public int TY(float y)
-        {
-            float y1_i = -y + 5;
-            float y1_s = y1_i * (screen.height / 2);
-            return (int)y1_s;
+            rt.Debug();
+            //screen.pixels = rt.screen.pixels;
+            //screen.Print("hello world", 2, 2, 0xffffff);
+            //screen.Line(2, 20, 160, 20, 0xff0000);
         }
     }
     class Camera
@@ -108,7 +100,17 @@ namespace Template
         // stores the result of an intersection
         public float distance;
         public Primitive nearestP;
-        public Vector3 normal;
+        public Vector3 normal; // in begin wss nog niet nodig
+    }
+    class Ray
+    {
+        public Vector3 position;
+        public Vector3 direction; // is normalised
+        public float int_dist;
+        public Ray()
+        {
+
+        }
     }
     class Raytracer
     {
@@ -117,22 +119,48 @@ namespace Template
         public Surface screen;
         public Raytracer(Surface screen)
         {
-            //display.pixels
             this.screen = screen;
-
+            this.scene = new Scene();
+            this.camera = new Camera();
         }
         public void Render()
         {
             // debug
-            screen.pixels = new int[] { };
+            Console.WriteLine(screen.pixels.Length);
+            for (int i = 0; i < screen.pixels.Length; i++)
+            {
+                // schrijf een functie die van een pixel een coordinaat maakt.
+            }
         }
         public void Debug()
         {
+            // take only the pixels at y = 0 and plot them. also plot the primitives
             foreach (Primitive p in scene.primitives)
             {
                 
             }
+
             // en voor elke ray
+
+            screen.Print("hello world", 2, 2, 0xffffff);
+            screen.Line();
+            screen.Plot(TX(camera.position.X), TX(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X) + 1, TX(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X), TX(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X) + 1, TX(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
+        }
+
+        public int TX(float x)
+        {
+            float x1_s = x + 5;
+            float x1_sc = x1_s * screen.width / 4;
+            return (int)x1_sc;
+        }
+        public int TY(float y)
+        {
+            float y1_i = -y + 5;
+            float y1_s = y1_i * (screen.height / 2);
+            return (int)y1_s;
         }
     }
     class Application
