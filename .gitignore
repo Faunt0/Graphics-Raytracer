@@ -4,3 +4,6 @@ obj/
 !/.gitignore
 /INFOGR2024Template/.vs
 /INFOGR2024Template/obj
+/INFOGR2024Template/.vs/INFOGR2024Template
+*.cache
+/INFOGR2024Template/obj/Debug

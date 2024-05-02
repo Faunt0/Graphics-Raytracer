@@ -17,7 +17,7 @@ namespace Template
         // initialize
         public void Init()
         {
-            //screen.Plot()
+            screen.Plot(1, 2, 0xff0000);
         }
         // tick: renders one frame
         public void Tick()
