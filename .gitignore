@@ -2,3 +2,5 @@ bin/
 obj/
 .*
 !/.gitignore
+/INFOGR2024Template/.vs
+/INFOGR2024Template/obj
