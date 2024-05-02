@@ -7,3 +7,4 @@ obj/
 /INFOGR2024Template/.vs/INFOGR2024Template
 *.cache
 /INFOGR2024Template/obj/Debug
+/INFOGR2024Template/obj/Debug/net6.0

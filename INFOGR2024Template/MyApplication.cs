@@ -8,6 +8,7 @@ namespace Template
         // member variables
         public Surface screen;
         public Surface debug;
+        public readonly bool isDebugging = true;
         // constructor
         public MyApplication(Surface screen, Surface debug)
         {
