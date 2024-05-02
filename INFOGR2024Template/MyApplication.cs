@@ -7,19 +7,23 @@ namespace Template
     {
         // member variables
         public Surface screen;
+        public Surface debug;
         // constructor
-        public MyApplication(Surface screen)
+        public MyApplication(Surface screen, Surface debug)
         {
             this.screen = screen;
+            this.debug = debug; 
         }
         // initialize
         public void Init()
         {
-
+            //screen.Plot()
         }
         // tick: renders one frame
         public void Tick()
         {
+            //debug.Clear(0);
+            //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
             screen.Print("hello world", 2, 2, 0xffffff);
             screen.Line(2, 20, 160, 20, 0xff0000);
@@ -27,13 +31,13 @@ namespace Template
 
         public int TX(float x)
         {
-            float x1_s = x + 2;
+            float x1_s = x + 5;
             float x1_sc = x1_s * screen.width / 4;
             return (int)x1_sc;
         }
         public int TY(float y)
         {
-            float y1_i = -y + 1;
+            float y1_i = -y + 5;
             float y1_s = y1_i * (screen.height / 2);
             return (int)y1_s;
         }
@@ -51,8 +55,6 @@ namespace Template
             position = (0, 0, 0);
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
-
-            //screenPlane = { (), (), (), () };
         }
     }
     class Primitive
@@ -97,7 +99,7 @@ namespace Template
         public Light[] lights;
         public Scene()
         {
-            primitives = new Primitive[] { new Primitive.Sphere((2, 0, 0), 1.0f), new Primitive.Sphere((2, 0, 0), 1.0f), new Primitive.Sphere((2, 0, 0), 1.0f)};
+            primitives = new Primitive[] { new Primitive.Sphere((2, 0, 0), 1.0f), new Primitive.Sphere((4, 0, 0), 1.0f), new Primitive.Sphere((0, 0, 0), 1.0f)};
         }
     }
     class Intersection
@@ -111,14 +113,25 @@ namespace Template
     {
         public Scene scene;
         public Camera camera;
-        public Surface display;
-        public Raytracer()
+        public Surface screen;
+        public Raytracer(Surface screen)
         {
-            display.pixels
+            //display.pixels
+            this.screen = screen;
+
         }
         public void Render()
         {
-             
+            // debug
+            screen.pixels = new int[] { };
+        }
+        public void Debug()
+        {
+            foreach (Primitive p in scene.primitives)
+            {
+                
+            }
+            // en voor elke ray
         }
     }
     class Application
@@ -126,8 +139,8 @@ namespace Template
         // handles keyboard and mouse input
         public Application()
         {
-            Raytracer rt = new Raytracer();
-            rt.Render();
+            //Raytracer rt = new Raytracer();
+            //rt.Render();
         }
     }
 }
