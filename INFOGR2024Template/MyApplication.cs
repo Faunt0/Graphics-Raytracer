@@ -130,6 +130,7 @@ namespace Template
             for (int i = 0; i < screen.pixels.Length; i++)
             {
                 // schrijf een functie die van een pixel een coordinaat maakt.
+                
             }
         }
         public void Debug()
@@ -143,23 +144,22 @@ namespace Template
             // en voor elke ray
 
             screen.Print("hello world", 2, 2, 0xffffff);
-            screen.Line();
-            screen.Plot(TX(camera.position.X), TX(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
-            screen.Plot(TX(camera.position.X) + 1, TX(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
-            screen.Plot(TX(camera.position.X), TX(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
-            screen.Plot(TX(camera.position.X) + 1, TX(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X), TY(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X) + 1, TY(camera.position.Z), 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X), TY(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
+            screen.Plot(TX(camera.position.X) + 1, TY(camera.position.Z) + 1, 0xffffff); // moet hier TY gebruikt worden?
         }
 
         public int TX(float x)
         {
             float x1_s = x + 5;
-            float x1_sc = x1_s * screen.width / 4;
+            float x1_sc = x1_s * screen.width / 10 * (screen.height / screen.width);
             return (int)x1_sc;
         }
         public int TY(float y)
         {
             float y1_i = -y + 5;
-            float y1_s = y1_i * (screen.height / 2);
+            float y1_s = y1_i * (screen.height / 10 * (screen.height / screen.width));
             return (int)y1_s;
         }
     }
