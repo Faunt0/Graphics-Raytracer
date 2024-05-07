@@ -54,7 +54,7 @@ namespace Template
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
             rightDir = (1, 0, 0);
-            float fov = 2; // dit is niet een hele chille manier, moet nog anders
+            float fov = 1; // dit is niet een hele chille manier, moet nog anders
             float a = 1; // aspect ratio;
 
             Vector3 screen_center = position + fov * lookAtDir;
@@ -85,11 +85,13 @@ namespace Template
         public class Plane : Primitive
         {
             public Vector3 normal;
-            public Vector3 distance;
-            public Plane(Vector3 norm, Vector3 dist)
+            public Vector3 p0;
+            public float distance;
+            public Plane(Vector3 norm, Vector3 p, Vector3 col)
             {
                 normal = norm;
-                distance = dist;
+                p0 = p;
+                color = col;
             }
         }
     }
@@ -106,14 +108,19 @@ namespace Template
     }
     class Scene
     {
-        public Primitive.Sphere[] primitives;
+        public Primitive[] primitives;
         public Light[] lights;
         public Scene()
         {
-            primitives = new Primitive.Sphere[] { new Primitive.Sphere((2, 0, 4), 0.5f, (255, 0, 0)), new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 255, 0)), new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 255)) };
+            primitives = new Primitive[] { 
+                new Primitive.Sphere((2, 0, 4), 0.5f, (255, 0, 0)), 
+                new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 255, 0)), 
+                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 255)),
+                new Primitive.Plane((0, 1, -1), (0, -1, 4), (100, 100, 100))
+            };
             //primitives = new Primitive.Sphere[] { new Primitive.Sphere((2, 0, 10), 0.5f, (255, 0, 0)), new Primitive.Sphere((0, 0, 10), .2f, (0, 0, 255)) };
 
-            lights = new Light[] { new Light(new(4, 4, 0), 100f) };
+            lights = new Light[] { new Light(new(4, 1, 1), 100f) };
         }
     }
     class Intersection
@@ -154,12 +161,10 @@ namespace Template
         {
             for (int i = 0; i < screen.pixels.Length; i++)
             {
-                // schrijf een functie die van een pixel een coordinaat maakt.
-                // schiet rays
                 int x = i % screen.width;
                 int y = i / screen.width; //vgm werkt dit
-                float a1 = x / screen.width;
-                float b1 = y / screen.height;
+                float a1 = (float)x / screen.width;
+                float b1 = (float)y / screen.height;
                 Vector3 u = camera.screenPlane[1] - camera.screenPlane[0];
                 Vector3 v = camera.screenPlane[2] - camera.screenPlane[0];
                 Vector3 point_on_screen = camera.screenPlane[0] + a1 * u + b1 * v;
@@ -168,60 +173,94 @@ namespace Template
                 Vector3 norm_ray_dir = ray_dir / ray_dir.Length; //normalize
                 Ray ray = new Ray(camera.position, norm_ray_dir);
 
+
                 Intersection ins = new();
 
-                foreach (Primitive.Sphere p in scene.primitives)
+                foreach (Primitive prim in scene.primitives)
                 {
-                    Vector3 C = p.position;
-                    float a = Vector3.Dot(norm_ray_dir, norm_ray_dir); // wanneer is dit niet 1?
-                    float b = - 2f * Vector3.Dot(norm_ray_dir, C - camera.position);
-                    float c = Vector3.Dot(C - camera.position, C - camera.position) - p.radius * p.radius;
-
-                    float D = (float)Math.Pow(b, 2) - 4 * a * c;
-
-                    if (D < 0)
+                    if (prim is Primitive.Sphere)
                     {
-                        // when the ray does not hit the sphere
-                        continue;
-                    }
-                    else if (D == 0)
-                    {
-                        // when the ray is tangent to the sphere
-                        // can a be zero in any way? When fov == 0 maybe?
-                        float t = -b / (2 * a);
-                        if (ins.distance > t)
+                        Primitive.Sphere p = (Primitive.Sphere)prim;
+                        Vector3 C = p.position;
+                        float a = Vector3.Dot(norm_ray_dir, norm_ray_dir); // wanneer is dit niet 1?
+                        float b = -2f * Vector3.Dot(norm_ray_dir, C - camera.position);
+                        float c = Vector3.Dot(C - camera.position, C - camera.position) - p.radius * p.radius;
+
+                        float D = (float)Math.Pow(b, 2) - 4 * a * c;
+
+                        if (D >= 0)
                         {
-                            ins.distance = t;
-                            ins.nearestP = p;
+                            float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
+                            if (ins.distance > t || ins.nearestP == null)
+                            {
+                                ins.distance = t;
+                                ins.nearestP = p;
+                            }
                         }
                     }
-                    else
+                    if (prim is Primitive.Plane)
                     {
-                        float t = Math.Min((-b + (float)Math.Sqrt(D))/(2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
-                        if (ins.distance > t)
+                        Primitive.Plane p = (Primitive.Plane)prim;
+                        
+                        if (Vector3.Dot(norm_ray_dir, p.normal) != 0)
                         {
-                            ins.distance = t;
-                            ins.nearestP = p;
+                            float t = Vector3.Dot((p.p0 - camera.position), p.normal) / Vector3.Dot(norm_ray_dir, p.normal);
+                            if (ins.distance > t || ins.nearestP == null)
+                            {
+                                ins.distance = t;
+                                ins.nearestP = p;
+                            }
                         }
+
                     }
                 }
 
+
+                // get the color of the pixel
                 if (ins.nearestP != null)
                 {
-                    Vector3 col = new Vector3(ins.nearestP.color);
+                    Vector3 col = new Vector3(0, 0, 0);
+
+                    Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+
+
+                    Vector3 shadow_ray = (scene.lights[0].position - ins_point) / (scene.lights[0].position - ins_point).Length;
+
+                    bool occluded = false;
+                    foreach (Primitive prim in scene.primitives)
+                    {
+                        if (prim is Primitive.Sphere)
+                        {
+                            Primitive.Sphere p = (Primitive.Sphere)prim;
+                            Vector3 C = p.position;
+                            float a = Vector3.Dot(shadow_ray, shadow_ray);
+                            float b = -2f * Vector3.Dot(shadow_ray, C - ins_point);
+                            float c = Vector3.Dot(C - ins_point, C - ins_point) - p.radius * p.radius;
+
+                            float D = (float)Math.Pow(b, 2) - 4 * a * c;
+
+                            if (D >= 0)
+                            {
+                                float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
+                                float epsilon = 0.000001f;
+                                //epsilon = 1.0f;
+                                if (t < (scene.lights[0].position - ins_point).Length - epsilon && t > epsilon)
+                                {
+                                    occluded = true;
+                                }
+                            }
+                        }
+                        if (prim is Primitive.Plane)
+                        {
+                            Primitive.Plane p = (Primitive.Plane)prim;
+                        }
+                    }
+
+                    if (!occluded)
+                    {
+                        col = ins.nearestP.color;
+                    }
                     screen.Plot(x, y, RGB2Int(col));
-
-                    //Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
-
-                    //// de hoek tussen de viewing ray en de illumination ray kan niet groter zijn dan 180 graden, anders is het licht achter het object vgm
-
-                    //Vector3 ill_ray = scene.lights[0].position - ins_point;
-
-                    //if (Math.Acos(Vector3.Dot(ill_ray, ray.direction) / (ill_ray.Length * ray.direction.Length)) < 90)
-                    //{
-                    //    Vector3 col = new Vector3(ins.nearestP.color);
-                    //    screen.Plot(x, y, RGB2Int(col));
-                    //}
                 }
 
 
@@ -232,20 +271,24 @@ namespace Template
         public void Debug()
         {
             // take only the pixels at y = 0 and plot them. also plot the primitives
-            foreach (Primitive.Sphere p in scene.primitives)
+            foreach (Primitive prim in scene.primitives)
             {
-                Vector2[] coords = new Vector2[100];
-                for (int i = 0; i < 100; i++)
+                if (prim is Primitive.Sphere)
                 {
-                    float a = i * 2f * (float)Math.PI / 100f;
-                    Vector2 coord = new Vector2((float)Math.Sin(a) * p.radius, (float)Math.Cos(a) * p.radius) + p.position.Xz;
-                    coords[i] = coord;
+                    Primitive.Sphere p = (Primitive.Sphere)prim;
+                    Vector2[] coords = new Vector2[100];
+                    for (int i = 0; i < 100; i++)
+                    {
+                        float a = i * 2f * (float)Math.PI / 100f;
+                        Vector2 coord = new Vector2((float)Math.Sin(a) * p.radius, (float)Math.Cos(a) * p.radius) + p.position.Xz;
+                        coords[i] = coord;
+                    }
+                    for (int i = 0; i < 100 - 1; i++)
+                    {
+                        screen.Line(TX(coords[i].X), TY(coords[i].Y), TX(coords[i + 1].X), TY(coords[i + 1].Y), RGB2Int(p.color));
+                    }
+                    screen.Line(TX(coords[0].X), TY(coords[0].Y), TX(coords[99].X), TY(coords[99].Y), RGB2Int(p.color));
                 }
-                for (int i = 0; i < 100 - 1; i++)
-                {
-                    screen.Line(TX(coords[i].X), TY(coords[i].Y), TX(coords[i + 1].X), TY(coords[i + 1].Y), RGB2Int(p.color));
-                }
-                screen.Line(TX(coords[0].X), TY(coords[0].Y), TX(coords[99].X), TY(coords[99].Y), RGB2Int(p.color));
             }
 
             //camera.position.Z -= 5;
@@ -262,10 +305,6 @@ namespace Template
 
             screen.Box(TX(camera.position.X), TY(camera.position.Z), TX(camera.position.X) + 1, TY(camera.position.Z) + 1, 0xffffff);
 
-            //screen.Plot(TX(camera.position.X), TY(camera.position.Z), 0xffffff); 
-            //screen.Plot(TX(camera.position.X) + 1, TY(camera.position.Z), 0xffffff); 
-            //screen.Plot(TX(camera.position.X), TY(camera.position.Z) + 1, 0xffffff); 
-            //screen.Plot(TX(camera.position.X) + 1, TY(camera.position.Z) + 1, 0xffffff); 
         }
 
         public int TX(float x)

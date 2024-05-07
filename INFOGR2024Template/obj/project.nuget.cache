@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "1xvtqrtzdDPILahIYFb1qUG86QnEk8oq0+9eNiwDfm8LDZ4UGdj3DPQXdP4rrfpuJbhlImlUQMhatz4aCiVe+w==",
+  "dgSpecHash": "09dpJI/pQVStjzzgNvlQurO6Wx9p5Cho5jXV03O+Wt0rigwR9H3Wlr1Yf5QJMlB9kfNgXoj5d5vfZV9tiHRzNA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\INFOGR2024Template.csproj",
+  "projectFilePath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kllex\\.nuget\\packages\\opentk\\4.8.2\\opentk.4.8.2.nupkg.sha512",
     "C:\\Users\\kllex\\.nuget\\packages\\opentk.audio.openal\\4.8.2\\opentk.audio.openal.4.8.2.nupkg.sha512",

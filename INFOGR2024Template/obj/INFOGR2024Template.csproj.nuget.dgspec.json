@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\INFOGR2024Template.csproj": {}
+    "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj": {}
   },
   "projects": {
-    "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\INFOGR2024Template.csproj": {
+    "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\INFOGR2024Template.csproj",
+        "projectUniqueName": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
         "projectName": "INFOGR2024Template",
-        "projectPath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\INFOGR2024Template.csproj",
+        "projectPath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
         "packagesPath": "C:\\Users\\kllex\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\INFOGR2024Template\\obj\\",
+        "outputPath": "C:\\Users\\kllex\\Desktop\\Universiteit Utrecht\\Graphics\\P1\\Graphics-Raytracer\\INFOGR2024Template\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\kllex\\AppData\\Roaming\\NuGet\\NuGet.Config",
