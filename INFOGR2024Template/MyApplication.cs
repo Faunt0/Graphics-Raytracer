@@ -74,6 +74,14 @@ namespace Template
     class Primitive
     {
         public Vector3 color; // alpha? doubles?
+        public Vector3 specular_color;
+        public float specularity;
+
+        public void SetSpecularity(Vector3 specular_color, float specularity)
+        {
+            this.specular_color = specular_color;
+            this.specularity = specularity;
+        }
 
         public class Sphere : Primitive
         {
@@ -122,6 +130,11 @@ namespace Template
                 new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)),
                 new Primitive.Plane((0, 1, -1), (0, -1, 4), (1, 1, 1))
             };
+            for (int i = 0; i < 3; i++)
+            {
+                primitives[i].SetSpecularity((1f, 1f, 1f), 2);
+            }
+            //primitives[0].SetSpecularity((1, 1, 1), 10);
 
             lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
         }
@@ -225,7 +238,6 @@ namespace Template
                                 ins.nearestP = p;
                             }
                         }
-
                     }
                 }
 
@@ -281,6 +293,8 @@ namespace Template
                         }
                     }
 
+
+                    // make colours
                     if (!occluded)
                     {
                         // introduce diffuse materials
@@ -295,13 +309,32 @@ namespace Template
                             Primitive.Plane p = (Primitive.Plane)ins.nearestP;
                             normal = p.normal;
                         }
+                        Vector3 r = shadow_ray - 2 * Vector3.Dot(shadow_ray, normal) * normal;
 
-                        // moet de ill_ray ook genormaliseerd zijn?
-                        //Vector3 L = Vector3.Normalize(scene.lights[0].intensity * (1 / (ill_ray.Length * ill_ray.Length)) * Math.Max(0, Vector3.Dot(normal, ill_ray)));
-                        Vector3 L = scene.lights[0].intensity * (1 / (shadow_ray.Length * shadow_ray.Length)) * Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray)));
-                        float Lx = L.X * ins.nearestP.color.X;
-                        float Ly = L.Y * ins.nearestP.color.Y;
-                        float Lz = L.Z * ins.nearestP.color.Z;
+                        //Vector3 L_part1 = Math.Min((1 / (shadow_ray.Length * shadow_ray.Length)), 1) *
+                        //    (ins.nearestP.color * Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray))) +
+                        //    ins.nearestP.specular_color * (float)Math.Pow(Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(norm_ray_dir, r))), ins.nearestP.specularity));
+                        Vector3 L_part1 = Math.Min((1 / (shadow_ray.Length * shadow_ray.Length)), 1) *
+                            (ins.nearestP.color * Math.Max(0, Vector3.Dot(normal, shadow_ray) / (normal.Length * norm_ray_dir.Length)) +
+                            ins.nearestP.specular_color * (float)Math.Pow(Math.Max(0, Vector3.Dot(norm_ray_dir, r) / (norm_ray_dir.Length * r.Length)), ins.nearestP.specularity));
+
+                        //col = EntryWiseMultiply(scene.lights[0].intensity, L_part1) + EntryWiseMultiply(ins.nearestP.color, (0.3f, 0.3f, 0.3f)); // handig voor ambient lighting maar werkt niet goed
+                        col = EntryWiseMultiply(scene.lights[0].intensity, L_part1);
+
+                        //float Lx = scene.lights[0].intensity.X * L_part1.X;
+                        //float Ly = scene.lights[0].intensity.Y * L_part1.Y;
+                        //float Lz = scene.lights[0].intensity.Z * L_part1.Z;
+
+
+
+
+                        // THIS WORKS
+                        //Vector3 L = scene.lights[0].intensity * (1 / (shadow_ray.Length * shadow_ray.Length)) * Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray)));
+                        //float Lx = L.X * ins.nearestP.color.X;
+                        //float Ly = L.Y * ins.nearestP.color.Y;
+                        //float Lz = L.Z * ins.nearestP.color.Z;
+
+
 
 
                         //(float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray));
@@ -312,7 +345,7 @@ namespace Template
                         //float Ly = scene.lights[0].intensity.Y * (1 / (ill_ray.Length * ill_ray.Length)) * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Y);
                         //float Lz = scene.lights[0].intensity.Z * (1 / (ill_ray.Length * ill_ray.Length)) * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Z);
 
-                        col = (Lx, Ly, Lz);
+                        //col = (Lx, Ly, Lz);
 
                         //col = ins.nearestP.color;
                     }
@@ -389,6 +422,10 @@ namespace Template
             //return ((int)rgb.X << 16) + ((int)rgb.Y << 8) + ((int)rgb.Z);
             //return ((int)(rgb.X * 255) << 16) + ((int)(rgb.Y * 255) << 8) + ((int)(rgb.Z * 255));
             //return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)rgb.Z * 255;
+        }
+        Vector3 EntryWiseMultiply(Vector3 vec1, Vector3 vec2)
+        {
+            return (vec1.X * vec2.X, vec1.Y * vec2.Y, vec1.Z * vec2.Z);
         }
     }
     class Application
