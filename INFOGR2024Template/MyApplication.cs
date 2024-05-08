@@ -12,6 +12,7 @@ namespace Template
         public Surface debug;
         public Raytracer rt;
         public readonly bool isDebugging = true;
+        public float a;
         // constructor
         public MyApplication(Surface screen, Surface debug)
         {
@@ -23,6 +24,7 @@ namespace Template
         {
             rt = new Raytracer(screen);
             rt.Debug();
+            a = 0;
             screen.Plot(1, 2, 0xff0000);
         }
         // tick: renders one frame
@@ -31,6 +33,8 @@ namespace Template
             //debug.Clear(0);
             //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
+            rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.5f * (float)Math.Cos(a), rt.scene.lights[0].position.Y + 0.5f * (float)Math.Sin(a), rt.scene.lights[0].position.Z);
+            a += 0.01f;
             rt.Render();
             rt.Debug();
 
@@ -99,8 +103,8 @@ namespace Template
     {
         // point light
         public Vector3 position;
-        public float intensity; // how
-        public Light(Vector3 pos, float inte)
+        public Vector3 intensity; // amount of light emitted by a point light source in one direction as a vector of the color it emits?
+        public Light(Vector3 pos, Vector3 inte)
         {
             position = pos;
             intensity = inte;
@@ -113,14 +117,13 @@ namespace Template
         public Scene()
         {
             primitives = new Primitive[] { 
-                new Primitive.Sphere((2, 0, 4), 0.5f, (255, 0, 0)), 
-                new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 255, 0)), 
-                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 255)),
-                new Primitive.Plane((0, 1, -1), (0, -1, 4), (100, 100, 100))
+                new Primitive.Sphere((2, 0, 4), 0.5f, (1, 0, 0)), 
+                new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 1, 0)), 
+                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)),
+                new Primitive.Plane((0, 1, -1), (0, -1, 4), (1, 1, 1))
             };
-            //primitives = new Primitive.Sphere[] { new Primitive.Sphere((2, 0, 10), 0.5f, (255, 0, 0)), new Primitive.Sphere((0, 0, 10), .2f, (0, 0, 255)) };
 
-            lights = new Light[] { new Light(new(4, 1, 1), 100f) };
+            lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
         }
     }
     class Intersection
@@ -161,8 +164,10 @@ namespace Template
         {
             for (int i = 0; i < screen.pixels.Length; i++)
             {
+                // get the corresponding x and y from the pixel index
                 int x = i % screen.width;
                 int y = i / screen.width; //vgm werkt dit
+                // get the corresponding point in the other coordinate system
                 float a1 = (float)x / screen.width;
                 float b1 = (float)y / screen.height;
                 Vector3 u = camera.screenPlane[1] - camera.screenPlane[0];
@@ -176,21 +181,30 @@ namespace Template
 
                 Intersection ins = new();
 
+                // calculate the intersections
                 foreach (Primitive prim in scene.primitives)
                 {
+                    // this must be possible in a more efficient and clean way.
                     if (prim is Primitive.Sphere)
                     {
                         Primitive.Sphere p = (Primitive.Sphere)prim;
+
+                        // Use math
                         Vector3 C = p.position;
                         float a = Vector3.Dot(norm_ray_dir, norm_ray_dir); // wanneer is dit niet 1?
                         float b = -2f * Vector3.Dot(norm_ray_dir, C - camera.position);
                         float c = Vector3.Dot(C - camera.position, C - camera.position) - p.radius * p.radius;
 
+                        // calculate the discriminant
                         float D = (float)Math.Pow(b, 2) - 4 * a * c;
 
+                        // only consider the case when there is an intersection
                         if (D >= 0)
                         {
+                            // calculate the closest distance to the sphere
                             float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
+
+                            // only store the shortest distance and thus the nearest Primitive
                             if (ins.distance > t || ins.nearestP == null)
                             {
                                 ins.distance = t;
@@ -219,19 +233,27 @@ namespace Template
                 // get the color of the pixel
                 if (ins.nearestP != null)
                 {
+                    // start black?
                     Vector3 col = new Vector3(0, 0, 0);
 
+                    // calculate the point of the intersection
                     Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
 
+                    // illumination ray
+                    Vector3 ill_ray = new Vector3(scene.lights[0].position - ins_point);
 
-                    Vector3 shadow_ray = (scene.lights[0].position - ins_point) / (scene.lights[0].position - ins_point).Length;
+                    // make the shadow ray
+                    Vector3 shadow_ray = Vector3.Normalize(scene.lights[0].position - ins_point);
 
+                    // calculate for every primitive if this occludes the shadow ray.
                     bool occluded = false;
                     foreach (Primitive prim in scene.primitives)
                     {
+                        // change to a more efficient approach by making functions per primitive
                         if (prim is Primitive.Sphere)
                         {
                             Primitive.Sphere p = (Primitive.Sphere)prim;
+                            // use math to calculate if there is at least one intersection
                             Vector3 C = p.position;
                             float a = Vector3.Dot(shadow_ray, shadow_ray);
                             float b = -2f * Vector3.Dot(shadow_ray, C - ins_point);
@@ -240,17 +262,20 @@ namespace Template
                             float D = (float)Math.Pow(b, 2) - 4 * a * c;
 
                             if (D >= 0)
-                            {
+                            { 
                                 float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
+
+                                // introduce an epsilon to combat shadow acne
                                 float epsilon = 0.000001f;
                                 //epsilon = 1.0f;
                                 if (t < (scene.lights[0].position - ins_point).Length - epsilon && t > epsilon)
                                 {
                                     occluded = true;
+                                    break;
                                 }
                             }
                         }
-                        if (prim is Primitive.Plane)
+                        else if (prim is Primitive.Plane)
                         {
                             Primitive.Plane p = (Primitive.Plane)prim;
                         }
@@ -258,14 +283,41 @@ namespace Template
 
                     if (!occluded)
                     {
-                        col = ins.nearestP.color;
+                        // introduce diffuse materials
+                        Vector3 normal = new Vector3();
+                        if (ins.nearestP is Primitive.Sphere)
+                        {
+                            Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
+                            normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
+                        }
+                        else if (ins.nearestP is Primitive.Plane)
+                        {
+                            Primitive.Plane p = (Primitive.Plane)ins.nearestP;
+                            normal = p.normal;
+                        }
+
+                        // moet de ill_ray ook genormaliseerd zijn?
+                        //Vector3 L = Vector3.Normalize(scene.lights[0].intensity * (1 / (ill_ray.Length * ill_ray.Length)) * Math.Max(0, Vector3.Dot(normal, ill_ray)));
+                        Vector3 L = scene.lights[0].intensity * (1 / (shadow_ray.Length * shadow_ray.Length)) * Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray)));
+                        float Lx = L.X * ins.nearestP.color.X;
+                        float Ly = L.Y * ins.nearestP.color.Y;
+                        float Lz = L.Z * ins.nearestP.color.Z;
+
+
+                        //(float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray));
+                        //float Lx = scene.lights[0].intensity.X * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.X);
+                        //float Ly = scene.lights[0].intensity.Y * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Y);
+                        //float Lz = scene.lights[0].intensity.Z * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Z);
+                        //float Lx = scene.lights[0].intensity.X * (1 / (ill_ray.Length * ill_ray.Length)) * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.X);
+                        //float Ly = scene.lights[0].intensity.Y * (1 / (ill_ray.Length * ill_ray.Length)) * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Y);
+                        //float Lz = scene.lights[0].intensity.Z * (1 / (ill_ray.Length * ill_ray.Length)) * (Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color.Z);
+
+                        col = (Lx, Ly, Lz);
+
+                        //col = ins.nearestP.color;
                     }
                     screen.Plot(x, y, RGB2Int(col));
                 }
-
-
-
-
             }
         }
         public void Debug()
@@ -291,6 +343,7 @@ namespace Template
                 }
             }
 
+            // can displace the camera to sit at the bottom of the screen, though this does not seem necessary
             //camera.position.Z -= 5;
             //for (int i = 0; i < 4; i++)
             //{
@@ -303,6 +356,7 @@ namespace Template
             // plot the light
             screen.Box(TX(scene.lights[0].position.X), TY(scene.lights[0].position.Z), TX(scene.lights[0].position.X) + 2, TY(scene.lights[0].position.Z) + 2, 0xffff00);
 
+            // plot the camera
             screen.Box(TX(camera.position.X), TY(camera.position.Z), TX(camera.position.X) + 1, TY(camera.position.Z) + 1, 0xffffff);
 
         }
@@ -331,7 +385,10 @@ namespace Template
         }
         int RGB2Int(Vector3 rgb)
         {
-            return (int)rgb.X * 256 * 256 + (int)rgb.Y * 256 + (int)rgb.Z;
+            return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)(rgb.Z * 255);
+            //return ((int)rgb.X << 16) + ((int)rgb.Y << 8) + ((int)rgb.Z);
+            //return ((int)(rgb.X * 255) << 16) + ((int)(rgb.Y * 255) << 8) + ((int)(rgb.Z * 255));
+            //return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)rgb.Z * 255;
         }
     }
     class Application
