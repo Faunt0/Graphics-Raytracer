@@ -33,8 +33,8 @@ namespace Template
             //debug.Clear(0);
             //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.5f * (float)Math.Cos(a), rt.scene.lights[0].position.Y + 0.5f * (float)Math.Sin(a), rt.scene.lights[0].position.Z);
-            a += 0.01f;
+            //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.5f * (float)Math.Cos(a), rt.scene.lights[0].position.Y + 0.5f * (float)Math.Sin(a), rt.scene.lights[0].position.Z);
+            //a += 0.01f;
             rt.Render();
             rt.Debug();
 
