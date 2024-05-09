@@ -33,8 +33,8 @@ namespace Template
             //debug.Clear(0);
             //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.5f * (float)Math.Cos(a), rt.scene.lights[0].position.Y + 0.5f * (float)Math.Sin(a), rt.scene.lights[0].position.Z);
-            //a += 0.01f;
+            rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z);
+            a += 0.05f;
             rt.Render();
             rt.Debug();
 
@@ -127,16 +127,17 @@ namespace Template
             primitives = new Primitive[] { 
                 new Primitive.Sphere((2, 0, 4), 0.5f, (1, 0, 0)), 
                 new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 1, 0)), 
-                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)),
-                new Primitive.Plane((0, 1, -1), (0, -1, 4), (1, 1, 1))
+                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)), 
+                new Primitive.Plane((0, 1, 0f), (0, -3, 4), (1, 1, 1))
             };
             for (int i = 0; i < 3; i++)
             {
-                primitives[i].SetSpecularity((1f, 1f, 1f), 2);
+                primitives[i].SetSpecularity((1f, 1f, 1f), 3);
             }
             //primitives[0].SetSpecularity((1, 1, 1), 10);
 
-            lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
+            //lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
+            lights = new Light[] { new Light(new(3, 1, 1), (40, 40, 40)) };
         }
     }
     class Intersection
@@ -232,7 +233,7 @@ namespace Template
                         if (Vector3.Dot(norm_ray_dir, p.normal) != 0)
                         {
                             float t = Vector3.Dot((p.p0 - camera.position), p.normal) / Vector3.Dot(norm_ray_dir, p.normal);
-                            if (ins.distance > t || ins.nearestP == null)
+                            if (t > 0 && (ins.distance > t || ins.nearestP == null))
                             {
                                 ins.distance = t;
                                 ins.nearestP = p;
@@ -255,7 +256,7 @@ namespace Template
                     Vector3 ill_ray = new Vector3(scene.lights[0].position - ins_point);
 
                     // make the shadow ray
-                    Vector3 shadow_ray = Vector3.Normalize(scene.lights[0].position - ins_point);
+                    Vector3 shadow_ray = Vector3.Normalize(ill_ray);
 
                     // calculate for every primitive if this occludes the shadow ray.
                     bool occluded = false;
@@ -309,22 +310,32 @@ namespace Template
                             Primitive.Plane p = (Primitive.Plane)ins.nearestP;
                             normal = p.normal;
                         }
-                        Vector3 r = shadow_ray - 2 * Vector3.Dot(shadow_ray, normal) * normal;
+                        Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
 
-                        //Vector3 L_part1 = Math.Min((1 / (shadow_ray.Length * shadow_ray.Length)), 1) *
-                        //    (ins.nearestP.color * Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(normal, shadow_ray))) +
-                        //    ins.nearestP.specular_color * (float)Math.Pow(Math.Max(0, (float)Math.Cos(Vector3.CalculateAngle(norm_ray_dir, r))), ins.nearestP.specularity));
-                        Vector3 L_part1 = Math.Min((1 / (shadow_ray.Length * shadow_ray.Length)), 1) *
-                            (ins.nearestP.color * Math.Max(0, Vector3.Dot(normal, shadow_ray) / (normal.Length * norm_ray_dir.Length)) +
-                            ins.nearestP.specular_color * (float)Math.Pow(Math.Max(0, Vector3.Dot(norm_ray_dir, r) / (norm_ray_dir.Length * r.Length)), ins.nearestP.specularity));
 
-                        //col = EntryWiseMultiply(scene.lights[0].intensity, L_part1) + EntryWiseMultiply(ins.nearestP.color, (0.3f, 0.3f, 0.3f)); // handig voor ambient lighting maar werkt niet goed
-                        col = EntryWiseMultiply(scene.lights[0].intensity, L_part1);
 
-                        //float Lx = scene.lights[0].intensity.X * L_part1.X;
-                        //float Ly = scene.lights[0].intensity.Y * L_part1.Y;
-                        //float Lz = scene.lights[0].intensity.Z * L_part1.Z;
 
+                        //Vector3 L_part1 = (1 / (shadow_ray.Length * shadow_ray.Length)) * 
+                        //    Math.Max(0, Vector3.Dot(normal, shadow_ray) / (normal.Length * norm_ray_dir.Length)) *
+                        //    ins.nearestP.color;
+
+                        //Vector3 L_part2 = (1 / (shadow_ray.Length * shadow_ray.Length)) * 
+                        //    (float)Math.Pow(Math.Max(0, Vector3.Dot(norm_ray_dir, r)), ins.nearestP.specularity) *
+                        //    ins.nearestP.specular_color;
+                        //col = EntryWiseMultiply(scene.lights[0].intensity, L_part1);
+
+                        //col += EntryWiseMultiply(scene.lights[0].intensity, L_part2);
+
+
+
+                        // dit werk niet optimaal, zitten wat rare artifacts in.
+                        Vector3 sumparts =
+                            Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color + 
+                            (float)Math.Pow(Math.Max(0, Vector3.Dot(norm_ray_dir, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+                        Vector3 L = EntryWiseMultiply(scene.lights[0].intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length)));
+
+                        //col = (Math.Min(1, L.X), Math.Min(1, L.Y), Math.Min(1, L.Z));
+                        col = L;
 
 
 
