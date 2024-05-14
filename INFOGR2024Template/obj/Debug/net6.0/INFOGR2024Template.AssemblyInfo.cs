@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("INFOGR2024Template")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1870c45758983d6819877dc7405cce20089c7d0c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5a2b7f68f2aea52bd822a74e0ec8fe8772564de5")]
 [assembly: System.Reflection.AssemblyProductAttribute("INFOGR2024Template")]
 [assembly: System.Reflection.AssemblyTitleAttribute("INFOGR2024Template")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

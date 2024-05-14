@@ -137,7 +137,7 @@ namespace Template
             //primitives[0].SetSpecularity((1, 1, 1), 10);
 
             //lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
-            lights = new Light[] { new Light(new(3, 1, 1), (40, 40, 40)) };
+            lights = new Light[] { new Light(new(3, 1, 1), (20, 20, 20)) };
         }
     }
     class Intersection
@@ -328,14 +328,14 @@ namespace Template
 
 
 
-                        // dit werk niet optimaal, zitten wat rare artifacts in.
+                        // dit werk niet optimaal, zitten wat rare artifacts in. Overflow namelijk
                         Vector3 sumparts =
                             Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color + 
                             (float)Math.Pow(Math.Max(0, Vector3.Dot(norm_ray_dir, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-                        Vector3 L = EntryWiseMultiply(scene.lights[0].intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length)));
+                        Vector3 L = EntryWiseMultiply(scene.lights[0].intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length))) + ins.nearestP.color * (0.2f, 0.2f, 0.2f);
 
                         //col = (Math.Min(1, L.X), Math.Min(1, L.Y), Math.Min(1, L.Z));
-                        col = L;
+                        col = Vector3.Clamp(L, (0, 0, 0), (1, 1, 1));
 
 
 
