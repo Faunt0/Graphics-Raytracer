@@ -176,6 +176,34 @@ namespace Template
         {
             base.OnRenderFrame(e);
             // called once per frame; render
+
+            //update position of camera
+            var keyboard = KeyboardState;
+            if (keyboard.IsKeyDown(Keys.W))
+            {
+                app.rt.camera.Move("forward");
+            }
+            if (keyboard.IsKeyDown(Keys.S))
+            {
+                app.rt.camera.Move("backward");
+            }
+            if (keyboard.IsKeyDown(Keys.A))
+            {
+                app.rt.camera.Move("left");
+            }
+            if (keyboard.IsKeyDown(Keys.D))
+            {
+                app.rt.camera.Move("right");
+            }
+            if (keyboard.IsKeyDown(Keys.Q))
+            {
+                app.rt.camera.Move("up");
+            }
+            if (keyboard.IsKeyDown(Keys.E))
+            {
+                app.rt.camera.Move("down");
+            }
+
             if (app != null) app.Tick();
             if (terminated)
             {

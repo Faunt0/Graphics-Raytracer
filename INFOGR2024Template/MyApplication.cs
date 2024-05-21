@@ -48,8 +48,6 @@ namespace Template
             {
                 rt.Render();
             };
-            rt.camera.position = (0, 1, 0);
-            rt.camera.refresh();
             
             
             //screen.pixels = rt.screen.pixels;
@@ -84,7 +82,37 @@ namespace Template
                 screen_center - upDir - a * rightDir,
                 screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
         }
-        public void refresh()
+
+        public void Move(string dir)
+        {
+            float speed = 0.5f;
+
+            switch (dir)
+            {
+                case "up":
+                    this.position.Y += speed;
+                    break;
+                case "down":
+                    this.position.Y -= speed;
+                    break;
+                case "backwards":
+                    this.position.Z += speed;
+                    break;
+                case "forwards":
+                    this.position.Z -= speed;
+                    break;
+                case "left":
+                    this.position.X += speed;
+                    break;
+                case "right":
+                    this.position.X -= speed;
+                    break;
+            }
+
+            Refresh();
+        }
+
+        public void Refresh()
         {
             
             float d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
