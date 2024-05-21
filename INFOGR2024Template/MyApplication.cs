@@ -48,8 +48,8 @@ namespace Template
             {
                 rt.Render();
             };
-            
-            
+            rt.camera.position = (0, 1, 0);
+            rt.camera.refresh();
             
             
             //screen.pixels = rt.screen.pixels;
@@ -64,7 +64,8 @@ namespace Template
         public Vector3 upDir;
         public Vector3 rightDir;
         public Vector3[] screenPlane; // specified by the four corners
-
+        float fov = 90; // dit is niet een hele chille manier, moet nog anders
+        float a = 1; // aspect ratio;
         public Camera()
         {
             // do something
@@ -72,8 +73,6 @@ namespace Template
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
             rightDir = (1, 0, 0);
-            float fov = 90; // dit is niet een hele chille manier, moet nog anders
-            float a = 1; // aspect ratio;
             float d = rightDir.X * a / (float)(Math.Tan((fov/2)* Math.PI / 180.0));
             Vector3 screen_center = position + d * lookAtDir;
             Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
@@ -84,6 +83,21 @@ namespace Template
                 screen_center + upDir + a * rightDir,
                 screen_center - upDir - a * rightDir,
                 screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
+        }
+        public void refresh()
+        {
+            
+            float d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
+            Vector3 screen_center = position + d * lookAtDir;
+            Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
+            // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
+            // fov is hoe dichtbij de camera staat van het scherm
+            screenPlane = new Vector3[4] {
+                screen_center + upDir - a * rightDir,
+                screen_center + upDir + a * rightDir,
+                screen_center - upDir - a * rightDir,
+                screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
+
         }
         
         
