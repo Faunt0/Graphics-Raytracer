@@ -1,7 +1,9 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace Template
 {
@@ -11,6 +13,7 @@ namespace Template
         public Surface screen;
         public Surface debug;
         public Raytracer rt;
+        public bool debugb = false;
         public readonly bool isDebugging = true;
         public float a;
         // constructor
@@ -30,14 +33,25 @@ namespace Template
         // tick: renders one frame
         public void Tick()
         {
+
+            
             //debug.Clear(0);
             //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z);
+            //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z + 0.05f * (float)Math.Cos(a));
             a += 0.05f;
-            rt.Render();
-            rt.Debug();
-
+            if (debugb)
+            {
+                rt.Debug();
+            }
+            else
+            {
+                rt.Render();
+            };
+            
+            
+            
+            
             //screen.pixels = rt.screen.pixels;
             //screen.Print("hello world", 2, 2, 0xffffff);
             //screen.Line(2, 20, 160, 20, 0xff0000);
@@ -58,10 +72,11 @@ namespace Template
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
             rightDir = (1, 0, 0);
-            float fov = 1; // dit is niet een hele chille manier, moet nog anders
+            float fov = 90; // dit is niet een hele chille manier, moet nog anders
             float a = 1; // aspect ratio;
-
-            Vector3 screen_center = position + fov * lookAtDir;
+            float d = rightDir.X * a / (float)(Math.Tan((fov/2)* Math.PI / 180.0));
+            Vector3 screen_center = position + d * lookAtDir;
+            Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
             // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
             // fov is hoe dichtbij de camera staat van het scherm
             screenPlane = new Vector3[4] {
@@ -70,6 +85,8 @@ namespace Template
                 screen_center - upDir - a * rightDir,
                 screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
         }
+        
+        
     }
     class Primitive
     {
@@ -279,7 +296,7 @@ namespace Template
                                 float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
 
                                 // introduce an epsilon to combat shadow acne
-                                float epsilon = 0.000001f;
+                                float epsilon = 0.01f;
                                 //epsilon = 1.0f;
                                 if (t < (scene.lights[0].position - ins_point).Length - epsilon && t > epsilon)
                                 {
