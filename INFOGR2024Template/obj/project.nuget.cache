@@ -1,53 +1,22 @@
 {
   "version": 2,
-  "dgSpecHash": "0qnnSUKZcs7DFwnQ8SJeE/NjVObuxMlr6M+3tg20NdGQTc8T8xD0Dy/b1jp+6MQfJNc8hG9wy4wbIAbNUVmxGw==",
+  "dgSpecHash": "xiRLTgb84Z1nVd93hOzZ9HG1gWd1xhjlNWOjB7kJs9Z1O/rMb+y0tioXH6J+WSJDkFKcDjZrdt/qTbnaHY36jw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\31612\\Desktop\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
+  "projectFilePath": "/Users/jochem/Documents/GitHub/Graphics-Raytracer/INFOGR2024Template/INFOGR2024Template.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\31612\\.nuget\\packages\\opentk\\4.8.2\\opentk.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.audio.openal\\4.8.2\\opentk.audio.openal.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.compute\\4.8.2\\opentk.compute.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.core\\4.8.2\\opentk.core.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.graphics\\4.8.2\\opentk.graphics.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.input\\4.8.2\\opentk.input.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.mathematics\\4.8.2\\opentk.mathematics.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.redist.glfw\\3.3.8.39\\opentk.redist.glfw.3.3.8.39.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.windowing.common\\4.8.2\\opentk.windowing.common.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.windowing.desktop\\4.8.2\\opentk.windowing.desktop.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\opentk.windowing.graphicslibraryframework\\4.8.2\\opentk.windowing.graphicslibraryframework.4.8.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\sixlabors.imagesharp\\3.1.2\\sixlabors.imagesharp.3.1.2.nupkg.sha512",
-    "C:\\Users\\31612\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
+    "/Users/jochem/.nuget/packages/opentk/4.8.2/opentk.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.audio.openal/4.8.2/opentk.audio.openal.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.compute/4.8.2/opentk.compute.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.core/4.8.2/opentk.core.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.graphics/4.8.2/opentk.graphics.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.input/4.8.2/opentk.input.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.mathematics/4.8.2/opentk.mathematics.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.redist.glfw/3.3.8.39/opentk.redist.glfw.3.3.8.39.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.windowing.common/4.8.2/opentk.windowing.common.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.windowing.desktop/4.8.2/opentk.windowing.desktop.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/opentk.windowing.graphicslibraryframework/4.8.2/opentk.windowing.graphicslibraryframework.4.8.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/sixlabors.imagesharp/3.1.2/sixlabors.imagesharp.3.1.2.nupkg.sha512",
+    "/Users/jochem/.nuget/packages/system.runtime.compilerservices.unsafe/5.0.0/system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-5x7m-6737-26cr",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net6.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-65x7-c272-7g7r",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net6.0"
-      ]
-    },
-    {
-      "code": "NU1902",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g85r-6x2q-45w7",
-      "libraryId": "SixLabors.ImageSharp",
-      "targetGraphs": [
-        "net6.0"
-      ]
-    }
-  ]
+  "logs": []
 }

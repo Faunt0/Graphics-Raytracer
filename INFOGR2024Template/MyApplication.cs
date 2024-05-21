@@ -95,17 +95,17 @@ namespace Template
                 case "down":
                     this.position.Y -= speed;
                     break;
-                case "backwards":
-                    this.position.Z += speed;
-                    break;
-                case "forwards":
+                case "backward":
                     this.position.Z -= speed;
                     break;
+                case "forward":
+                    this.position.Z += speed;
+                    break;
                 case "left":
-                    this.position.X += speed;
+                    this.position.X -= speed;
                     break;
                 case "right":
-                    this.position.X -= speed;
+                    this.position.X += speed;
                     break;
             }
 
