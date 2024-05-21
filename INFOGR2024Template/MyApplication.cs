@@ -83,8 +83,12 @@ namespace Template
                 screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
         }
 
+        // Move is a public method for updating the camera's position with user input
+        // it also calls Refresh, so the screen plane follows the new camera position
+        // https://opentk.net/learn/chapter1/9-camera.html?tabs=input-opentk4%2Cdelta-time-input-opentk4%2Ccursor-mode-opentk4%2Cmouse-move-opentk4%2Cscroll-opentk4
         public void Move(string dir)
         {
+            // amount to move the camera 
             float speed = 0.5f;
 
             switch (dir)
@@ -112,6 +116,13 @@ namespace Template
             Refresh();
         }
 
+        public void CameraAngle()
+        {
+
+            Refresh();
+        }
+
+        // Refresh ensures that the screen plane follows the camera
         public void Refresh()
         {
             

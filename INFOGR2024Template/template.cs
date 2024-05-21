@@ -171,14 +171,10 @@ namespace Template
             // called once per frame; app logic
             var keyboard = KeyboardState;
             if (keyboard[Keys.Escape]) terminated = true;
-        }
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            base.OnRenderFrame(e);
-            // called once per frame; render
 
-            //update position of camera
-            var keyboard = KeyboardState;
+            //update position of camera using the wasd keys
+            // key Q and E regulate moving the camera in the vertical direction
+            //var keyboard = KeyboardState;
             if (keyboard.IsKeyDown(Keys.W))
             {
                 app.rt.camera.Move("forward");
@@ -203,6 +199,17 @@ namespace Template
             {
                 app.rt.camera.Move("down");
             }
+
+            // update camera pitch and angle using the mouse input
+
+
+        }
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            base.OnRenderFrame(e);
+            // called once per frame; render
+
+           
 
             if (app != null) app.Tick();
             if (terminated)
