@@ -61,7 +61,7 @@ namespace Template
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
             rightDir = (1, 0, 0);
-            float fov = 60; // dit is niet een hele chille manier, moet nog anders
+            float fov = 90; // dit is niet een hele chille manier, moet nog anders
             float a = 1; // aspect ratio;
 
             // gebruik aspect ratio die je omrekent naar het verschil
@@ -95,6 +95,47 @@ namespace Template
         {
             // This needs to have multiple sub-classes which define properties
             public Tuple<float, float, float> spec_ref_mat;
+        }
+        public bool DoesOcclude(Ray ray, Scene scene)
+        {
+            // introduce an epsilon to combat shadow acne
+            float epsilon = 0.000001f;
+
+            Vector3 shadow_ray = ray.direction;
+            Vector3 ins_point = ray.startPos;
+            if (this is Sphere p)
+            {
+                // use math to calculate if there is at least one intersection
+                Vector3 C = p.position;
+                float a = Vector3.Dot(shadow_ray, shadow_ray);
+                float b = -2f * Vector3.Dot(shadow_ray, C - ins_point);
+                float c = Vector3.Dot(C - ins_point, C - ins_point) - p.radius * p.radius;
+
+                float D = (float)Math.Pow(b, 2) - 4 * a * c;
+
+                if (D >= 0)
+                {
+                    float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
+
+                    //epsilon = 1.0f;
+                    if (t < (scene.lights[0].position - ins_point).Length - epsilon && t > epsilon)
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if (this is Plane pl)
+            {
+                if (Vector3.Dot(ray.direction, pl.normal) != 0)
+                {
+                    float t = Vector3.Dot((pl.position - ray.startPos), pl.normal) / Vector3.Dot(ray.direction, pl.normal);
+                    if (t < (scene.lights[0].position - ins_point).Length - epsilon && t > epsilon)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
         public class Sphere : Primitive
         {
@@ -134,6 +175,7 @@ namespace Template
         public Primitive[] primitives;
         public Light[] lights;
         public int max_bounces;
+        public List<(Ray, Vector3, int)> debugRays;
         public Scene()
         {
             max_bounces = 8;
@@ -145,57 +187,85 @@ namespace Template
             };
             for (int i = 0; i < 1; i++)
             {
-                primitives[i].SetSpecularity((0.8f, 0.8f, 0.8f), 3);
+                //primitives[i].SetSpecularity((0.8f, 0.8f, 0.8f), 3);
             }
-            //primitives[0].SetSpecularity((1, 1, 1), 10);
+            primitives[0].SetSpecularity((1, 1, 1), 3);
+            //primitives[0].material.spec_ref_mat = new Tuple<float, float, float>(1, 0, 0);
 
             //lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
-            lights = new Light[] { new Light(new(3, 1, 1), (290, 20, 20)) };
+            lights = new Light[] { new Light(new(3, 1, 1), (20, 20, 20)) };
+
+            debugRays = new List<(Ray, Vector3, int)>();
         }
         public Vector3 Trace(Ray ray, Scene s)
         {
             Vector3 color = new Vector3(0, 0, 0);
             Intersection ins = ray.GetIntersection(s);
+
             if (ins.nearestP != null)
             {
-                
                 if (ins.nearestP.specular_color == (1, 1, 1)) // does (1, 1, 1) mean its a pure specular
                 {
-
                     Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
-                    Vector3 norm_reflected_dir = ray.direction - 2 * Vector3.Dot(ray.direction, ins.normal) * ins.normal;
-                    Ray reflected_ray = new Ray(norm_reflected_dir, ins_point);
+                    Vector3 v = ins.distance * ray.direction;
+                    Vector3 norm_reflected_dir = v - 2 * Vector3.Dot(v, ins.normal) * ins.normal;
+
+                    Ray reflected_ray = new Ray(ins_point, norm_reflected_dir);
                     
                     if (ray.num_of_bounces < s.max_bounces)
                     {
                         reflected_ray.num_of_bounces = ray.num_of_bounces + 1;
-                        color += ins.nearestP.color * Trace(reflected_ray, s);
+
+                        // is dit wat ze bedoelen met material color?
+                        Vector3 normal = new Vector3();
+                        if (ins.nearestP is Primitive.Sphere)
+                        {
+                            Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
+                            normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
+                        }
+                        else if (ins.nearestP is Primitive.Plane p)
+                        {
+                            normal = p.normal;
+                        }
+                        
+                        Vector3 ill_ray = new Vector3(s.lights[0].position - ins_point);
+                        Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
+                        Vector3 materialColor = (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+
+                        //debugRays.Add((reflected_ray, ray.startPos, 0x00ff00));
+
+                        color += materialColor + Trace(reflected_ray, s);
                     }
                 }
                 else
                 {
+                    if (ray.startPos != (0, 0, 0))
+                    {
+                        Console.WriteLine("hdf");
+                    }
+
                     // calculate the phong diffuse shading etc
 
                     // calculate the point of the intersection
                     Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
 
                     // illumination ray
-                    //Vector3 ill_ray = new Vector3(s.lights[0].position - ins_point);
                     Vector3 ill_ray = new Vector3(s.lights[0].position - ins_point);
 
                     // make the shadow ray
                     Vector3 shadow_ray = Vector3.Normalize(ill_ray);
 
-                    // check occlusion
-                    Ray r_shadow_ray = new Ray(shadow_ray, ins_point);
 
-                    Intersection newins = r_shadow_ray.GetIntersection(s);
+                    bool occluded = false;
+                    foreach (Primitive p in s.primitives)
+                    {
+                        if (p.DoesOcclude(ray, s)) occluded = true; break;
+                    }
 
 
-                    if (newins.nearestP == null || newins.distance > ill_ray.Length)
+                    if (!occluded)
                     {
                         // if it is not occluded
-
                         Vector3 normal = new Vector3();
                         if (ins.nearestP is Primitive.Sphere)
                         {
@@ -210,10 +280,14 @@ namespace Template
 
 
 
+                        //Vector3 sumparts =
+                        //    Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                        //    (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
                         Vector3 sumparts =
                             Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                             (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-                        Vector3 L = EntryWiseMultiply(s.lights[0].intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length))) + ins.nearestP.color * (0.2f, 0.2f, 0.2f);
+
+                        Vector3 L = EntryWiseMultiply(s.lights[0].intensity, (sumparts + ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
 
                         color += L;
                     }
@@ -280,7 +354,7 @@ namespace Template
                         {
                             ins.distance = t;
                             ins.nearestP = p;
-                            ins.normal = Vector3.Normalize(ins.nearestP.position - (startPos + ins.distance * direction));
+                            ins.normal = Vector3.Normalize((startPos + ins.distance * direction) - ins.nearestP.position);
                         }
                     }
                 }
@@ -350,25 +424,24 @@ namespace Template
 
 
 
-                // show the debug rays
-                //if (true && y == 0 && x % 10 == 0)
-                //{
-                //    Intersection ins = ray.GetIntersection(scene);
-                //    if (ins.nearestP != null)
-                //    {
-                //        Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+                //show the debug rays
+                if (true && y == 500 && x % 20 == 0)
+                {
+                    Intersection ins = ray.GetIntersection(scene);
+                    if (ins.nearestP != null)
+                    {
+                        Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
 
-                //        debugPoints.Add((TX(ins_point.X), TY(ins_point.Z)));
-                //    }
-                //    else
-                //    {
-                //        float d = (5 - ray.startPos.Z) / ray.direction.Z;
-                //        Vector3 _ = ray.startPos + d * ray.direction;
-                //        int xval = Math.Min(TX(_.X), 0);
-                //        debugPoints.Add((xval, 0));
-                //    }
-                //}
-
+                        debugPoints.Add((TX(ins_point.X), TY(ins_point.Z)));
+                    }
+                    else
+                    {
+                        float d = (5 - ray.startPos.Z) / ray.direction.Z;
+                        Vector3 _ = ray.startPos + d * ray.direction;
+                        int xval = Math.Max(TX(_.X), 0);
+                        debugPoints.Add((TX(_.X), 0));
+                    }
+                }
             }
         }
         public void Debug()
@@ -394,17 +467,30 @@ namespace Template
                 }
             }
 
-            // can displace the camera to sit at the bottom of the screen, though this does not seem necessary
-            //camera.position.Z -= 5;
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    camera.screenPlane[i].Z -= 5;
-            //}
 
             foreach (Vector2 point in debugPoints)
             {
                 screen.Line(TX(camera.position.X), TY(camera.position.Z), (int)point.X, (int)point.Y, 0xffffff);
             }
+
+            // secondary rays
+            //if (scene.debugRays.Count > 0)
+            //{
+            //    (Ray, Vector3, int) debugRay = scene.debugRays[0];
+
+            //    //float d = (5 - debugRay.Item1.startPos.Z) / debugRay.Item1.startPos.Z;
+            //    Vector3 pointsa = debugRay.Item1.startPos + 1 * debugRay.Item1.direction;
+            //    screen.Line(TX(debugRay.Item1.startPos.X), TY(debugRay.Item1.startPos.Z), TX(pointsa.X), TY(pointsa.Z), debugRay.Item3); 
+            //}
+            //for (int i = 0; i < scene.debugRays.Count; i += 40)
+            //{
+            //    (Ray, Vector3, int) debugRay = scene.debugRays[i];
+
+            //    float d = (-5 - debugRay.Item1.startPos.X) / debugRay.Item1.startPos.X;
+            //    Vector3 point = debugRay.Item1.startPos + d * debugRay.Item1.direction;
+            //    screen.Line(TX(debugRay.Item2.X), TY(debugRay.Item2.Z), TX(point.X), TY(point.Z), debugRay.Item3);
+            //}
+
 
             // plot the screen
             screen.Line(TX(camera.screenPlane[0].X), TY(camera.screenPlane[0].Z), TX(camera.screenPlane[1].X), TY(camera.screenPlane[1].Z), 0xffffff);
