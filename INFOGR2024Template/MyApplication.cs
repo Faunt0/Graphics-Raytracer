@@ -33,17 +33,12 @@ namespace Template
         // tick: renders one frame
         public void Tick()
         {
-            //debug.Clear(0);
-            //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z);
-            a += 0.05f;
+            //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z);
+            //a += 0.05f;
             rt.Render();
-            rt.Debug();
+            //rt.Debug();
 
-            //screen.pixels = rt.screen.pixels;
-            //screen.Print("hello world", 2, 2, 0xffffff);
-            //screen.Line(2, 20, 160, 20, 0xff0000);
         }
     }
     class Camera
@@ -91,15 +86,14 @@ namespace Template
             this.specular_color = specular_color;
             this.specularity = specularity;
         }
-        public class Material
+        public void SetMaterial(float specular, float reflect, float mat)
         {
-            // This needs to have multiple sub-classes which define properties
-            public Tuple<float, float, float> spec_ref_mat;
+            material = new Material(specular, reflect, mat);
         }
         public bool DoesOcclude(Ray ray, Scene scene)
         {
             // introduce an epsilon to combat shadow acne
-            float epsilon = 0.000001f;
+            float epsilon = 0.0001f;
 
             Vector3 shadow_ray = ray.direction;
             Vector3 ins_point = ray.startPos;
@@ -136,6 +130,20 @@ namespace Template
                 }
             }
             return false;
+        }
+        public class Material
+        {
+            // Subclasses for different materials?
+            public float spec_index;
+            public float ref_index;
+            public float mat_index;
+            //public Tuple<float, float, float> spec_ref_mat;
+            public Material(float specular, float reflect, float mat)
+            {
+                spec_index = specular;
+                ref_index = reflect;
+                mat_index = mat;
+            }
         }
         public class Sphere : Primitive
         {
@@ -175,148 +183,184 @@ namespace Template
         public Primitive[] primitives;
         public Light[] lights;
         public int max_bounces;
-        public List<(Ray, Vector3, int)> debugRays;
+        public List<(Ray, int)> debugRays;
+        public bool isDebugRay = false;
         public Scene()
         {
             max_bounces = 8;
-            primitives = new Primitive[] { 
-                new Primitive.Sphere((2, 0, 4), 0.5f, (1, 0, 0)), 
-                new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 1, 0)), 
-                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)), 
-                new Primitive.Plane((0f, 1, 0f), (0, -3, 4), (1, 1, 1))
+            primitives = new Primitive[] {
+                new Primitive.Sphere((2, 0, 4), 0.5f, (1, 0, 0)),
+                new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 1, 0)),
+                new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)),
+                new Primitive.Plane((0f, 1, 0f), (0, -1, 3), (1, 1, 1))
             };
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 4; i++)
             {
                 //primitives[i].SetSpecularity((0.8f, 0.8f, 0.8f), 3);
+                primitives[i].SetMaterial(0, 0, 1);
             }
+            primitives[1].SetSpecularity((1, 1, 1), 3);
+            primitives[1].SetMaterial(0.5f, 0, .5f);
+
             primitives[0].SetSpecularity((1, 1, 1), 3);
+            primitives[0].SetMaterial(0, 0.5f, 0.5f);
+
+            primitives[3].SetMaterial(0.5f, 0.5f, 0);
+
             //primitives[0].material.spec_ref_mat = new Tuple<float, float, float>(1, 0, 0);
 
-            //lights = new Light[] { new Light(new(4, 1, 1), (1, 1, 1)) };
+
+            // even voor de debug rays
+            //primitives = new Primitive[]
+            //{
+            //    new Primitive.Sphere((0, 0, 4), 0.5f, (1, 0, 0))
+            //};
+
+            //primitives[0].SetSpecularity((1, 1, 1), 3); // is niet relevant?
+            //primitives[0].SetMaterial(0, 0.5f, 0);
+
+
+
+
+
+
+
             lights = new Light[] { new Light(new(3, 1, 1), (20, 20, 20)) };
 
-            debugRays = new List<(Ray, Vector3, int)>();
+            debugRays = new List<(Ray, int)>();
         }
         public Vector3 Trace(Ray ray, Scene s)
         {
             Vector3 color = new Vector3(0, 0, 0);
             Intersection ins = ray.GetIntersection(s);
 
-            if (ins.nearestP != null)
+            if (ins.nearestP != null && (ray.parent_ray == null || ray.hit_prim != ray.parent_ray.hit_prim))
             {
-                if (ins.nearestP.specular_color == (1, 1, 1)) // does (1, 1, 1) mean its a pure specular
+                if (ins.nearestP.material.ref_index > 0) // does (1, 1, 1) mean its a pure specular
                 {
-                    Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+                    Vector3 ins_point = ins.point;
                     Vector3 v = ins.distance * ray.direction;
-                    Vector3 norm_reflected_dir = v - 2 * Vector3.Dot(v, ins.normal) * ins.normal;
+                    //Vector3 norm_reflected_dir = v - 2 * Vector3.Dot(v, ins.normal) * ins.normal;
+                    Vector3 norm_reflected_dir = ray.direction - 2 * Vector3.Dot(ray.direction, ins.normal) * ins.normal;
 
                     Ray reflected_ray = new Ray(ins_point, norm_reflected_dir);
+                    reflected_ray.parent_ray = ray;
+                    reflected_ray.isSecondaryRay = true;
                     
+                    // definieer de max_number of bounces als member variable ray
                     if (ray.num_of_bounces < s.max_bounces)
                     {
                         reflected_ray.num_of_bounces = ray.num_of_bounces + 1;
 
-                        // is dit wat ze bedoelen met material color?
-                        Vector3 normal = new Vector3();
-                        if (ins.nearestP is Primitive.Sphere)
+                        //if (tellertje % 20 == 0 && ins)
+                        if (isDebugRay)
                         {
-                            Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
-                            normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
+                            //debugRays.Add((reflected_ray, RGB2Int((1 * (ray.num_of_bounces + 1) / s.max_bounces, 1 * (ray.num_of_bounces + 1) / s.max_bounces, 1 * (ray.num_of_bounces + 1) / s.max_bounces))));
+                            debugRays.Add((reflected_ray, 0x00ff00));
                         }
-                        else if (ins.nearestP is Primitive.Plane p)
-                        {
-                            normal = p.normal;
-                        }
-                        
-                        Vector3 ill_ray = new Vector3(s.lights[0].position - ins_point);
-                        Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
-                        Vector3 materialColor = (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
 
-                        //debugRays.Add((reflected_ray, ray.startPos, 0x00ff00));
-
-                        color += materialColor + Trace(reflected_ray, s);
+                        color += CalculateColor(ins.nearestP, ray, ins) + ins.nearestP.material.ref_index * Trace(reflected_ray, s);
                     }
                 }
                 else
                 {
-                    if (ray.startPos != (0, 0, 0))
+                    isDebugRay = false;
+                    color += CalculateColor(ins.nearestP, ray, ins);
+                }
+            }
+            return color;
+        }
+        public Vector3 CalculateColor(Primitive prim, Ray ray, Intersection ins)
+        {
+            // calculate the point of the intersection
+            Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+
+            // illumination ray
+            // generalizeer voor meerdere lichten
+            Vector3 ill_ray = new Vector3(lights[0].position - ins_point);
+
+            // make the shadow ray
+            Vector3 shadow_ray = Vector3.Normalize(ill_ray);
+
+            bool occluded = false;
+            Primitive occludedBy = new Primitive();
+            if (!ray.isSecondaryRay)
+            {
+                foreach (Primitive p in primitives)
+                {
+                    if (p.DoesOcclude(ray, this))
                     {
-                        Console.WriteLine("hdf");
+                        occluded = true; occludedBy = p;
                     }
-
-                    // calculate the phong diffuse shading etc
-
-                    // calculate the point of the intersection
-                    Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
-
-                    // illumination ray
-                    Vector3 ill_ray = new Vector3(s.lights[0].position - ins_point);
-
-                    // make the shadow ray
-                    Vector3 shadow_ray = Vector3.Normalize(ill_ray);
-
-
-                    bool occluded = false;
-                    foreach (Primitive p in s.primitives)
+                    if (occludedBy == prim)
                     {
-                        if (p.DoesOcclude(ray, s)) occluded = true; break;
-                    }
-
-
-                    if (!occluded)
-                    {
-                        // if it is not occluded
-                        Vector3 normal = new Vector3();
-                        if (ins.nearestP is Primitive.Sphere)
-                        {
-                            Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
-                            normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
-                        }
-                        else if (ins.nearestP is Primitive.Plane p)
-                        {
-                            normal = p.normal;
-                        }
-                        Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
-
-
-
-                        //Vector3 sumparts =
-                        //    Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                        //    (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-                        Vector3 sumparts =
-                            Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                            (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-
-                        Vector3 L = EntryWiseMultiply(s.lights[0].intensity, (sumparts + ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
-
-                        color += L;
+                        occluded = false;
                     }
                 }
             }
-            return Vector3.Clamp(color, (0, 0, 0), (1, 1, 1));
+
+
+            if (!occluded)
+            {
+                // if it is not occluded
+                Vector3 normal = new Vector3();
+                if (ins.nearestP is Primitive.Sphere)
+                {
+                    Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
+                    normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
+                }
+                else if (ins.nearestP is Primitive.Plane p)
+                {
+                    normal = p.normal;
+                }
+                Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
+
+
+                Vector3 sumparts =
+                    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                    ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+
+                //Vector3 sumparts =
+                //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+
+                // generalizeer om ook meerdere lichten te gebruiken
+                Vector3 L = EntryWiseMultiply(lights[0].intensity, (sumparts + (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
+
+
+                return L;
+            }
+            return (0, 0, 0);
         }
+
         public Vector3 EntryWiseMultiply(Vector3 vec1, Vector3 vec2)
         {
             return (vec1.X * vec2.X, vec1.Y * vec2.Y, vec1.Z * vec2.Z);
         }
+        //int RGB2Int(Vector3 rgb)
+        //{
+        //    return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)(rgb.Z * 255);
+        //    //return ((int)rgb.X << 16) + ((int)rgb.Y << 8) + ((int)rgb.Z);
+        //    //return ((int)(rgb.X * 255) << 16) + ((int)(rgb.Y * 255) << 8) + ((int)(rgb.Z * 255));
+        //    //return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)rgb.Z * 255;
+        //}
     }
     class Intersection
     {
         // stores the result of an intersection
         public float distance;
         public Primitive nearestP;
-        public Vector3 normal; // in begin wss nog niet nodig
-        //public Intersection(float distance, Primitive nearestP)
-        //{
-        //    this.distance = distance;
-        //    this.nearestP = nearestP;
-        //}
+        public Vector3 normal;
+        public Vector3 point;
     }
     class Ray
     {
         public Vector3 startPos;
         public Vector3 direction; // is normalised
-        public float intersection_dist;
+        public Primitive? hit_prim;
+        public Ray? parent_ray;
+        public bool isSecondaryRay;
         public int num_of_bounces;
         public Ray(Vector3 pos, Vector3 dir)
         {
@@ -325,6 +369,7 @@ namespace Template
         }
         public Intersection GetIntersection(Scene s)
         {
+            float epsilon = 0.00001f;
             Intersection ins = new Intersection();
 
             foreach (Primitive prim in s.primitives)
@@ -349,12 +394,16 @@ namespace Template
                         // calculate the closest distance to the sphere
                         float t = Math.Min((-b + (float)Math.Sqrt(D)) / (2 * a), (-b - (float)Math.Sqrt(D)) / (2 * a));
 
+
                         // only store the shortest distance and thus the nearest Primitive
-                        if (ins.distance > t || ins.nearestP == null)
+                        if ((ins.distance - epsilon > t && t > epsilon) || (ins.nearestP == null && t > epsilon))
                         {
-                            ins.distance = t;
+                            ins.point = startPos + t * direction;
+                            ins.distance = Math.Abs(t);
                             ins.nearestP = p;
                             ins.normal = Vector3.Normalize((startPos + ins.distance * direction) - ins.nearestP.position);
+
+                            hit_prim = p;
                         }
                     }
                 }
@@ -365,18 +414,17 @@ namespace Template
                     if (Vector3.Dot(direction, p.normal) != 0)
                     {
                         float t = Vector3.Dot((p.position - startPos), p.normal) / Vector3.Dot(direction, p.normal);
-                        if (t > 0 && (ins.distance > t || ins.nearestP == null))
+                        if ((t > epsilon && ins.distance - epsilon > t) || (ins.nearestP == null && t > epsilon))
                         {
-                            ins.distance = t;
+                            ins.point = startPos + t * direction;
+                            ins.distance = Math.Abs(t);
                             ins.nearestP = p;
                             ins.normal = p.normal;
+
+                            hit_prim = p;
                         }
                     }
                 }
-            }
-            if (ins.distance < 0)
-            {
-                return new Intersection();
             }
             return ins;
         }
@@ -412,35 +460,42 @@ namespace Template
                 Vector3 norm_ray_dir = ray_dir / ray_dir.Length; //normalize
                 Ray ray = new Ray(camera.position, norm_ray_dir);
 
-                if (x == 500 && y == 501)
+                if (x == 500 && y == 749)
                 {
                     continue;
                 }
-                Vector3 color = scene.Trace(ray, scene);
+
+
+                Vector3 color = Vector3.Clamp(scene.Trace(ray, scene), (0,0,0), (1,1,1));
 
 
                 screen.Plot(x, y, RGB2Int(color));
 
 
 
-
                 //show the debug rays
-                if (true && y == 500 && x % 20 == 0)
+                if (true && y == 500 && x % 15 == 0)
                 {
+                    scene.isDebugRay = true;
                     Intersection ins = ray.GetIntersection(scene);
+
+
+                    // debug rays vanaf de camera
                     if (ins.nearestP != null)
                     {
                         Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
-
                         debugPoints.Add((TX(ins_point.X), TY(ins_point.Z)));
                     }
                     else
                     {
                         float d = (5 - ray.startPos.Z) / ray.direction.Z;
                         Vector3 _ = ray.startPos + d * ray.direction;
-                        int xval = Math.Max(TX(_.X), 0);
                         debugPoints.Add((TX(_.X), 0));
                     }
+                }
+                else
+                {
+                    scene.isDebugRay = false;
                 }
             }
         }
@@ -474,22 +529,15 @@ namespace Template
             }
 
             // secondary rays
-            //if (scene.debugRays.Count > 0)
-            //{
-            //    (Ray, Vector3, int) debugRay = scene.debugRays[0];
-
-            //    //float d = (5 - debugRay.Item1.startPos.Z) / debugRay.Item1.startPos.Z;
-            //    Vector3 pointsa = debugRay.Item1.startPos + 1 * debugRay.Item1.direction;
-            //    screen.Line(TX(debugRay.Item1.startPos.X), TY(debugRay.Item1.startPos.Z), TX(pointsa.X), TY(pointsa.Z), debugRay.Item3); 
-            //}
-            //for (int i = 0; i < scene.debugRays.Count; i += 40)
-            //{
-            //    (Ray, Vector3, int) debugRay = scene.debugRays[i];
-
-            //    float d = (-5 - debugRay.Item1.startPos.X) / debugRay.Item1.startPos.X;
-            //    Vector3 point = debugRay.Item1.startPos + d * debugRay.Item1.direction;
-            //    screen.Line(TX(debugRay.Item2.X), TY(debugRay.Item2.Z), TX(point.X), TY(point.Z), debugRay.Item3);
-            //}
+            for (int i = 0; i < scene.debugRays.Count; i++)
+            {
+                (Ray, int) debugRay = scene.debugRays[i];
+                if (debugRay.Item1.startPos.Y == 0)
+                {
+                    Vector3 pointsa = debugRay.Item1.startPos + 4 * debugRay.Item1.direction;
+                    screen.Line(TX(debugRay.Item1.startPos.X), TY(debugRay.Item1.startPos.Z), TX(pointsa.X), TY(pointsa.Z), debugRay.Item2);
+                }
+            }
 
 
             // plot the screen
