@@ -281,16 +281,6 @@ namespace Template
             //primitives[0].material.spec_ref_mat = new Tuple<float, float, float>(1, 0, 0);
 
 
-            // even voor de debug rays
-            //primitives = new Primitive[]
-            //{
-            //    new Primitive.Sphere((0, 0, 4), 0.5f, (1, 0, 0))
-            //};
-
-            //primitives[0].SetSpecularity((1, 1, 1), 3); // is niet relevant?
-            //primitives[0].SetMaterial(0, 0.5f, 0);
-
-
 
 
 
