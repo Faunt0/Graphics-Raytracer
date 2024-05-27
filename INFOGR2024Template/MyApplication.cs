@@ -10,8 +10,10 @@ namespace Template
     class MyApplication
     {
         // member variables
+
         public Surface screen;
         public Surface debug;
+        
         public Raytracer rt;
         public bool debugb = false;
         public readonly bool isDebugging = true;
@@ -50,6 +52,7 @@ namespace Template
             };
             
             
+            
             //screen.pixels = rt.screen.pixels;
             //screen.Print("hello world", 2, 2, 0xffffff);
             //screen.Line(2, 20, 160, 20, 0xff0000);
@@ -63,10 +66,11 @@ namespace Template
         public Vector3 rightDir;
         public Vector3[] screenPlane; // specified by the four corners
         float fov = 90; // dit is niet een hele chille manier, moet nog anders
-        float a = 1; // aspect ratio;
-        public Camera()
+        float a; // aspect ratio;
+        public Camera(float aspectratio)
         {
             // do something
+            a = aspectratio;
             position = (0, 0, 0);
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
@@ -242,7 +246,7 @@ namespace Template
         {
             this.screen = screen;
             this.scene = new Scene();
-            this.camera = new Camera();
+            this.camera = new Camera((float)screen.width/(float)screen.height);
         }
         public void Render()
         {
@@ -483,8 +487,8 @@ namespace Template
         }
         public int TY(float y)
         {
-            float y1_i = -y + 5;
-            float y1_s = y1_i * screen.height / 10;
+            float y1_i = -y + (5f*(screen.width/screen.height));
+            float y1_s = y1_i * screen.height / (10f* (screen.width / screen.height));
             return (int)y1_s;
         }
 

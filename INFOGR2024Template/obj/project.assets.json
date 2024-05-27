@@ -447,24 +447,26 @@
     ]
   },
   "packageFolders": {
-    "/Users/jochem/.nuget/packages/": {}
+    "C:\\Users\\31612\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/jochem/Documents/GitHub/Graphics-Raytracer/INFOGR2024Template/INFOGR2024Template.csproj",
+      "projectUniqueName": "C:\\Users\\31612\\Desktop\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
       "projectName": "INFOGR2024Template",
-      "projectPath": "/Users/jochem/Documents/GitHub/Graphics-Raytracer/INFOGR2024Template/INFOGR2024Template.csproj",
-      "packagesPath": "/Users/jochem/.nuget/packages/",
-      "outputPath": "/Users/jochem/Documents/GitHub/Graphics-Raytracer/INFOGR2024Template/obj/",
+      "projectPath": "C:\\Users\\31612\\Desktop\\Graphics-Raytracer\\INFOGR2024Template\\INFOGR2024Template.csproj",
+      "packagesPath": "C:\\Users\\31612\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\31612\\Desktop\\Graphics-Raytracer\\INFOGR2024Template\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/jochem/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\31612\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net6.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -508,8 +510,40 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.315/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.101\\RuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-5x7m-6737-26cr",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-65x7-c272-7g7r",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'SixLabors.ImageSharp' 3.1.2 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g85r-6x2q-45w7",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    }
+  ]
 }
