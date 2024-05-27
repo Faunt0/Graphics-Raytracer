@@ -282,26 +282,25 @@ namespace Template
             {
                 Vector3 ill_ray = new Vector3(l.position - ins_point);
 
-                // make the shadow ray
-                //Vector3 shadow_ray = Vector3.Normalize(ill_ray);
-                Ray shadow_ray = new Ray(Vector3.Normalize(ill_ray), ins_point);
+            // make the shadow ray
+            Vector3 shadow_ray = Vector3.Normalize(ill_ray);
 
-                bool occluded = false;
-                Primitive occludedBy = new Primitive();
-                if (!ray.isSecondaryRay)
+            bool occluded = false;
+            Primitive occludedBy = new Primitive();
+            if (!ray.isSecondaryRay)
+            {
+                foreach (Primitive p in primitives)
                 {
-                    foreach (Primitive p in primitives)
+                    if (p.DoesOcclude(ray, this))
                     {
-                        if (p.DoesOcclude(shadow_ray, this))
-                        {
-                            occluded = true; occludedBy = p;
-                        }
-                        if (occludedBy == prim)
-                        {
-                            occluded = false;
-                        }
+                        occluded = true; occludedBy = p;
+                    }
+                    if (occludedBy == prim)
+                    {
+                        occluded = false;
                     }
                 }
+            }
 
 
                 if (!occluded)
