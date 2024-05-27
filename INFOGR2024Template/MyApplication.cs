@@ -325,7 +325,10 @@ namespace Template
                 //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                 //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
 
+
+
                 // generalizeer om ook meerdere lichten te gebruiken
+
                 Vector3 L = EntryWiseMultiply(lights[0].intensity, (sumparts + (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
 
 
