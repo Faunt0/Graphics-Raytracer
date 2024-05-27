@@ -13,13 +13,11 @@ namespace Template
     class MyApplication
     {
         // member variables
-
         public Surface screen;
         public Surface debug;
         
         public Raytracer rt;
-        public bool debugb = true;
-        //public readonly bool isDebugging = true;
+        public bool debugb = false;
         public float a;
         // constructor
         public MyApplication(Surface screen, Surface debug)
@@ -38,12 +36,7 @@ namespace Template
         // tick: renders one frame
         public void Tick()
         {
-
-            
-            //debug.Clear(0);
-            //debug.Print("DEBUG", 2, 2, 0xffffff);
             screen.Clear(0);
-            //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z + 0.05f * (float)Math.Cos(a));
             a += 0.05f;
             if (debugb)
             {
@@ -54,12 +47,6 @@ namespace Template
             {
                 rt.Render();
             };
-            
-            
-            
-            //screen.pixels = rt.screen.pixels;
-            //screen.Print("hello world", 2, 2, 0xffffff);
-            //screen.Line(2, 20, 160, 20, 0xff0000);
         }
     }
     class Camera
@@ -83,13 +70,12 @@ namespace Template
             d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
             Vector3 screen_center = position + d * lookAtDir;
             Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
-            // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
             // fov is hoe dichtbij de camera staat van het scherm
             screenPlane = new Vector3[4] {
                 screen_center + upDir - a * rightDir,
                 screen_center + upDir + a * rightDir,
                 screen_center - upDir - a * rightDir,
-                screen_center - upDir + a * rightDir }; // weet niet of het laatste punt klopt.
+                screen_center - upDir + a * rightDir };
         }
 
         // Move is a public method for updating the camera's position with user input
@@ -147,7 +133,6 @@ namespace Template
                     rightDir = Yaw(-degrees, rightDir);
                     break;
             }
-            //Console.WriteLine($"lookAtDir: {lookAtDir}\tupDir: {upDir}\trightDir: {rightDir}");
             Refresh();
         }
         public Vector3 Pitch(float beta, Vector3 vec)
@@ -165,11 +150,7 @@ namespace Template
         // Refresh ensures that the screen plane follows the camera
         public void Refresh()
         {
-            
-            //float d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
             Vector3 screen_center = position + d * lookAtDir;
-            //Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
-            // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
             // fov is hoe dichtbij de camera staat van het scherm
             screenPlane = new Vector3[4] {
                 screen_center + upDir - a * rightDir,
@@ -267,11 +248,21 @@ namespace Template
         {
             public Vector3 normal;
             public float distance;
+            public Vector3 uvec;
+            public Vector3 vvec;
             public Plane(Vector3 norm, Vector3 p, Vector3 col)
             {
                 this.normal = norm;
                 this.position = p;
                 this.color = col;
+
+                // calculate the vectors for u and v for textures
+                uvec = Vector3.Normalize(Vector3.Cross(normal, new Vector3(1, 0, 0)));
+                if (uvec == new Vector3(0, 0, 0))
+                {
+                    uvec = Vector3.Normalize(Vector3.Cross(normal, new Vector3(0, 0, 1)));
+                }
+                vvec = Vector3.Normalize(Vector3.Cross(normal, uvec));
             }
         }
     }
@@ -279,7 +270,7 @@ namespace Template
     {
         // point light
         public Vector3 position;
-        public Vector3 intensity; // amount of light emitted by a point light source in one direction as a vector of the color it emits?
+        public Vector3 intensity;
         public Light(Vector3 pos, Vector3 inte)
         {
             this.position = pos;
@@ -292,6 +283,7 @@ namespace Template
         public Light[] lights;
         public int max_bounces;
         public List<(Ray, int)> debugRays;
+        public List<(Vector2, Vector2, int)> debugPoints;
         public bool isDebugRay = false;
         public Scene()
         {
@@ -303,11 +295,6 @@ namespace Template
                 new Primitive.Sphere((0, 2, 2), .6f, (158/255, 163/255, 168/255)),
                 new Primitive.Plane((0f, 1, 0f), (0, -1, 3), (1, 1, 1))
             };
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    //primitives[i].SetSpecularity(3);
-            //    primitives[i].SetMaterial(0, 0, 1, false);
-            //}
             primitives[0].SetSpecularity(3);
             primitives[0].SetMaterial(0, 0.5f, 0.5f, false);
 
@@ -335,26 +322,21 @@ namespace Template
 
             if (ins.nearestP != null && (ray.parent_ray == null || ray.hit_prim != ray.parent_ray.hit_prim))
             {
-                if (ins.nearestP.material.ref_index > 0) // does (1, 1, 1) mean its a pure specular
+                if (ins.nearestP.material.ref_index > 0)
                 {
                     Vector3 ins_point = ins.point;
-                    Vector3 v = ins.distance * ray.direction;
-                    //Vector3 norm_reflected_dir = v - 2 * Vector3.Dot(v, ins.normal) * ins.normal;
                     Vector3 norm_reflected_dir = ray.direction - 2 * Vector3.Dot(ray.direction, ins.normal) * ins.normal;
 
                     Ray reflected_ray = new Ray(ins_point, norm_reflected_dir);
                     reflected_ray.parent_ray = ray;
                     reflected_ray.isSecondaryRay = true;
                     
-                    // definieer de max_number of bounces als member variable ray
                     if (ray.num_of_bounces < s.max_bounces)
                     {
                         reflected_ray.num_of_bounces = ray.num_of_bounces + 1;
 
-                        //if (tellertje % 20 == 0 && ins)
                         if (isDebugRay)
                         {
-                            //debugRays.Add((reflected_ray, RGB2Int((1 * (ray.num_of_bounces + 1) / s.max_bounces, 1 * (ray.num_of_bounces + 1) / s.max_bounces, 1 * (ray.num_of_bounces + 1) / s.max_bounces))));
                             debugRays.Add((reflected_ray, 0x00ff00));
                         }
 
@@ -363,8 +345,8 @@ namespace Template
                 }
                 else
                 {
-                    isDebugRay = false;
                     color += CalculateColor(ins.nearestP, ray, ins);
+                    isDebugRay = false;
                 }
             }
             return color;
@@ -376,15 +358,14 @@ namespace Template
             Vector3 L = new Vector3(0, 0, 0);
 
             // illumination ray
-            // generalizeer voor meerdere lichten
             foreach (Light l in lights)
             {
                 Vector3 ill_ray = new Vector3(l.position - ins_point);
 
-                //if (isDebugRay)
-                //{
-                //    debugRays.Add((new(ill_ray, ins_point), 0x00ff00));
-                //}
+                if (isDebugRay)
+                {
+                    debugPoints.Add((ins_point.Xz, l.position.Xz, 0xffff00));
+                }
                 // make the shadow ray
                 Vector3 shadow_ray = Vector3.Normalize(ill_ray);
                 Ray sray = new Ray(shadow_ray, ins_point);
@@ -413,22 +394,22 @@ namespace Template
                     Vector3 normal = new Vector3();
                     if (ins.nearestP is Primitive.Sphere)
                     {
-                        Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
-                        normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
+                        Primitive.Sphere p2 = (Primitive.Sphere)ins.nearestP;
+                        normal = Vector3.Normalize(ins_point - p2.position); // get the normal at the intersection point
                     }
-                    else if (ins.nearestP is Primitive.Plane p)
+                    else if (ins.nearestP is Primitive.Plane)
                     {
-                        normal = p.normal;
+                        Primitive.Plane p1 = (Primitive.Plane)ins.nearestP;
+                        normal = p1.normal;
                     }
                     Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
-
 
                     Vector3 sumparts =
                         ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                         ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                         ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
 
-                    // als we het op deze manier doen hebben we geen specular color member variabele nodig
+                    // deal with metals
                     float temp = ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity);
                     if (ins.nearestP.material.isMetal)
                     {
@@ -438,16 +419,6 @@ namespace Template
                     {
                         sumparts += temp * new Vector3(1, 1, 1);
                     }
-
-                    //Vector3 sumparts =
-                    //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                    //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-
-
-
-                    // generalizeer om ook meerdere lichten te gebruiken
-
-                    //L += EntryWiseMultiply(l.intensity, (sumparts + (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
                     L += EntryWiseMultiply(l.intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length)));
                 }
             }
@@ -549,18 +520,17 @@ namespace Template
         public Scene scene;
         public Camera camera;
         public Surface screen;
-        public List<Vector2> debugPoints;
         public Raytracer(Surface screen)
         {
             this.screen = screen;
             this.scene = new Scene();
             this.camera = new Camera((float)screen.width/(float)screen.height);
-            debugPoints = new List<Vector2>();
+            scene.debugPoints = new List<(Vector2, Vector2, int)>();
         }
         public void Render()
         {
             scene.debugRays.Clear();
-            debugPoints.Clear();
+            scene.debugPoints.Clear();
             for (int i = 0; i < screen.pixels.Length; i++)
             {
                 // get the corresponding x and y from the pixel index
@@ -578,13 +548,11 @@ namespace Template
                 Ray ray = new Ray(camera.position, norm_ray_dir);
 
 
-
+                // make sure the values don't overflow
                 Vector3 color = Vector3.Clamp(scene.Trace(ray, scene), (0,0,0), (1,1,1));
 
 
                 screen.Plot(x, y, RGB2Int(color));
-
-
 
                 //show the debug rays
                 if (y == (float)screen.height/2 && x % 15 == 0)
@@ -597,13 +565,18 @@ namespace Template
                     if (ins.nearestP != null)
                     {
                         Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
-                        debugPoints.Add((TX(ins_point.X), TY(ins_point.Z)));
+                        scene.debugPoints.Add(
+                            (
+                            new(TX(ins_point.X), TY(ins_point.Z)), 
+                            new(TX(ray.startPos.X), TY(ray.startPos.Z)),
+                            0xffffff));
                     }
                     else
                     {
                         float d = (5 - ray.startPos.Z) / ray.direction.Z;
                         Vector3 _ = ray.startPos + d * ray.direction;
-                        debugPoints.Add((TX(_.X), 0));
+                        scene.debugPoints.Add((new(TX(_.X), 0),
+                            new(TX(ray.startPos.X), TY(ray.startPos.Z)), 0xffffff));
                     }
                 }
                 else
@@ -615,6 +588,53 @@ namespace Template
         public void Debug()
         {
             // take only the pixels at y = 0 and plot them. also plot the primitives
+            scene.debugRays.Clear();
+            scene.debugPoints.Clear();
+            for (int i = 0; i < screen.pixels.Length; i++)
+            {
+                // get the corresponding x and y from the pixel index
+                int x = i % screen.width;
+                int y = i / screen.width;
+                // get the corresponding point in the other coordinate system
+                float a1 = (float)x / screen.width;
+                float b1 = (float)y / screen.height;
+                Vector3 u = camera.screenPlane[1] - camera.screenPlane[0];
+                Vector3 v = camera.screenPlane[2] - camera.screenPlane[0];
+                Vector3 point_on_screen = camera.screenPlane[0] + a1 * u + b1 * v;
+                Vector3 pointScreen = point_on_screen;
+                Vector3 ray_dir = pointScreen - camera.position;
+                Vector3 norm_ray_dir = ray_dir / ray_dir.Length; //normalize
+                Ray ray = new Ray(camera.position, norm_ray_dir);
+
+                Vector3 color = Vector3.Clamp(scene.Trace(ray, scene), (0, 0, 0), (1, 1, 1));
+
+                //show the debug rays
+                if (y == (float)screen.height / 2 && x % 15 == 0)
+                {
+                    scene.isDebugRay = true;
+                    Intersection ins = ray.GetIntersection(scene);
+
+
+                    // debug rays vanaf de camera
+                    if (ins.nearestP != null)
+                    {
+                        Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+                        scene.debugPoints.Add((new(TX(ins_point.X), TY(ins_point.Z)), new(TX(ray.startPos.X), TY(ray.startPos.Z)), 0xffffff));
+                    }
+                    else
+                    {
+                        float d = (5 - ray.startPos.Z) / ray.direction.Z;
+                        Vector3 _ = ray.startPos + d * ray.direction;
+                        scene.debugPoints.Add((new(TX(_.X), 0), new(TX(ray.startPos.X), TY(ray.startPos.Z)), 0xffffff));
+                    }
+                }
+                else
+                {
+                    scene.isDebugRay = false;
+                }
+            }
+
+
             foreach (Primitive prim in scene.primitives)
             {
                 if (prim is Primitive.Sphere)
@@ -636,9 +656,9 @@ namespace Template
             }
 
 
-            foreach (Vector2 point in debugPoints)
+            foreach ((Vector2, Vector2, int) dbgp in scene.debugPoints)
             {
-                screen.Line(TX(camera.position.X), TY(camera.position.Z), (int)point.X, (int)point.Y, 0xffffff);
+                screen.Line((int)dbgp.Item1.X, (int)dbgp.Item1.Y, (int)dbgp.Item2.X, (int)dbgp.Item2.Y, dbgp.Item3);
             }
 
             // secondary rays
