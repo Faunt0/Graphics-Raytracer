@@ -278,13 +278,6 @@ namespace Template
 
             primitives[3].SetMaterial(0.5f, 0.5f, 0);
 
-            //primitives[0].material.spec_ref_mat = new Tuple<float, float, float>(1, 0, 0);
-
-
-
-
-
-
 
             lights = new Light[] { new Light(new(3, 1, 1), (10, 10, 10)), new Light((-3, 1, 1), (10, 10, 10)), new Light((0, 3, 0), (20, 0, 0)) };
 
