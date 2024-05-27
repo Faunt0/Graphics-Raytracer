@@ -62,7 +62,7 @@ namespace Template
         public OpenTKApp()
             : base(GameWindowSettings.Default, new NativeWindowSettings()
             {
-                ClientSize = new Vector2i(320, 320),
+                ClientSize = new Vector2i(500, 500),
                 Profile = allowPrehistoricOpenGL ? ContextProfile.Compatability : ContextProfile.Core,
                 Flags = allowPrehistoricOpenGL ? ContextFlags.Default : ContextFlags.ForwardCompatible,
             })
@@ -201,7 +201,22 @@ namespace Template
             }
 
             // update camera pitch and angle using the mouse input
-
+            if (keyboard.IsKeyDown(Keys.Up))
+            {
+                app.rt.camera.CameraAngle("up");
+            }
+            if (keyboard.IsKeyDown(Keys.Down))
+            {
+                app.rt.camera.CameraAngle("down");
+            }
+            if (keyboard.IsKeyDown(Keys.Left))
+            {
+                app.rt.camera.CameraAngle("left");
+            }
+            if (keyboard.IsKeyDown(Keys.Right))
+            {
+                app.rt.camera.CameraAngle("right");
+            }
 
         }
         protected override void OnRenderFrame(FrameEventArgs e)

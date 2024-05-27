@@ -71,6 +71,7 @@ namespace Template
         public Vector3[] screenPlane; // specified by the four corners
         float fov = 90; // dit is niet een hele chille manier, moet nog anders
         float a; // aspect ratio;
+        float d;
         public Camera(float aspectratio)
         {
             // do something
@@ -79,7 +80,7 @@ namespace Template
             lookAtDir = (0, 0, 1);
             upDir = (0, 1, 0);
             rightDir = (1, 0, 0);
-            float d = rightDir.X * a / (float)(Math.Tan((fov/2)* Math.PI / 180.0));
+            d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
             Vector3 screen_center = position + d * lookAtDir;
             Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
             // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
@@ -96,47 +97,82 @@ namespace Template
         // https://opentk.net/learn/chapter1/9-camera.html?tabs=input-opentk4%2Cdelta-time-input-opentk4%2Ccursor-mode-opentk4%2Cmouse-move-opentk4%2Cscroll-opentk4
         public void Move(string dir)
         {
-            // amount to move the camera 
+            // amount to move the camera
             float speed = 0.5f;
 
             switch (dir)
             {
                 case "up":
-                    this.position.Y += speed;
+                    this.position += speed * upDir;
                     break;
                 case "down":
-                    this.position.Y -= speed;
+                    this.position -= speed * upDir;
                     break;
                 case "backward":
-                    this.position.Z -= speed;
+                    this.position -= speed * lookAtDir;
                     break;
                 case "forward":
-                    this.position.Z += speed;
+                    this.position += speed * lookAtDir;
                     break;
                 case "left":
-                    this.position.X -= speed;
+                    this.position -= speed * rightDir;
                     break;
                 case "right":
-                    this.position.X += speed;
+                    this.position += speed * rightDir;
                     break;
             }
 
             Refresh();
         }
 
-        public void CameraAngle()
+        public void CameraAngle(string dir)
         {
-
+            float degrees = 180/(float)Math.PI * 0.005f;
+            switch (dir)
+            {
+                case "up":
+                    lookAtDir = Pitch(-degrees, lookAtDir);
+                    //rightDir = Pitch(-degrees, rightDir);
+                    upDir = Pitch(-degrees, upDir);
+                    break;
+                case "down":
+                    lookAtDir = Pitch(degrees, lookAtDir);
+                    //rightDir = Pitch(degrees, rightDir);
+                    upDir = Pitch(degrees, upDir);
+                    break;
+                case "left":
+                    lookAtDir = Yaw(degrees, lookAtDir);
+                    rightDir = Yaw(degrees, rightDir);
+                    //upDir = Yaw(degrees, upDir);
+                    break;
+                case "right":
+                    lookAtDir = Yaw(-degrees, lookAtDir);
+                    rightDir = Yaw(-degrees, rightDir);
+                    //upDir = Yaw(-degrees, upDir);
+                    break;
+            }
+            //Console.WriteLine($"lookAtDir: {lookAtDir}\tupDir: {upDir}\trightDir: {rightDir}");
             Refresh();
         }
+        public Vector3 Pitch(float beta, Vector3 vec)
+        {
+            Matrix3 pitch = Matrix3.CreateRotationX(beta);
+            return pitch * vec;
+        }
+        public Vector3 Yaw(float beta, Vector3 vec)
+        {
+            Matrix3 yaw = Matrix3.CreateRotationY(beta);
+            return yaw * vec;
+        }
+
 
         // Refresh ensures that the screen plane follows the camera
         public void Refresh()
         {
             
-            float d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
+            //float d = rightDir.X * a / (float)(Math.Tan((fov / 2) * Math.PI / 180.0));
             Vector3 screen_center = position + d * lookAtDir;
-            Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
+            //Console.WriteLine((Math.Tan((fov / 2) * Math.PI / 180.0)));
             // deze hoeken staan nu 2 verwijderd van de z: arbitrair hangt eigenlijk af van fov
             // fov is hoe dichtbij de camera staat van het scherm
             screenPlane = new Vector3[4] {
@@ -511,6 +547,8 @@ namespace Template
         }
         public void Render()
         {
+            scene.debugRays.Clear();
+            debugPoints.Clear();
             for (int i = 0; i < screen.pixels.Length; i++)
             {
                 // get the corresponding x and y from the pixel index
