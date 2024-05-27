@@ -18,8 +18,8 @@ namespace Template
         public Surface debug;
         
         public Raytracer rt;
-        public bool debugb = false;
-        public readonly bool isDebugging = true;
+        public bool debugb = true;
+        //public readonly bool isDebugging = true;
         public float a;
         // constructor
         public MyApplication(Surface screen, Surface debug)
@@ -47,6 +47,7 @@ namespace Template
             a += 0.05f;
             if (debugb)
             {
+                rt.Render();
                 rt.Debug();
             }
             else
@@ -526,10 +527,6 @@ namespace Template
                 Vector3 norm_ray_dir = ray_dir / ray_dir.Length; //normalize
                 Ray ray = new Ray(camera.position, norm_ray_dir);
 
-                if (x == 500 && y == 749)
-                {
-                    continue;
-                }
 
 
                 Vector3 color = Vector3.Clamp(scene.Trace(ray, scene), (0,0,0), (1,1,1));
@@ -540,7 +537,7 @@ namespace Template
 
 
                 //show the debug rays
-                if (true && y == 500 && x % 15 == 0)
+                if (y == (float)screen.height/2 && x % 15 == 0)
                 {
                     scene.isDebugRay = true;
                     Intersection ins = ray.GetIntersection(scene);
