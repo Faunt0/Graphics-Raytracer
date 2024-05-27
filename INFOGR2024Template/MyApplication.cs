@@ -685,22 +685,9 @@ namespace Template
             float y1_s = y1_i * screen.height / (10f* (screen.width / screen.height));
             return (int)y1_s;
         }
-
-        // maak van de index van een pixel een coordinaat
-        // moet dit een 3d coord zijn aangezien het scherm er ook nog moet staan?
-        Vector3 PX(int i)
-        {
-            float y = -(10 * (i % screen.width) / screen.height - 5);
-            float x = i / screen.width * 10 - 5;
-            float z = 0;
-            return new Vector3(x, y, z);
-        }
         int RGB2Int(Vector3 rgb)
         {
             return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)(rgb.Z * 255);
-            //return ((int)rgb.X << 16) + ((int)rgb.Y << 8) + ((int)rgb.Z);
-            //return ((int)(rgb.X * 255) << 16) + ((int)(rgb.Y * 255) << 8) + ((int)(rgb.Z * 255));
-            //return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)rgb.Z * 255;
         }
     }
     class Application
