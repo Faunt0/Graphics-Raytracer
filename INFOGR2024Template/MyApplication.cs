@@ -37,7 +37,7 @@ namespace Template
             //rt.scene.lights[0].position = (rt.scene.lights[0].position.X + 0.05f * (float)Math.Cos(a), rt.scene.lights[0].position.Y, rt.scene.lights[0].position.Z);
             //a += 0.05f;
             rt.Render();
-            //rt.Debug();
+            rt.Debug();
 
         }
     }
@@ -225,7 +225,7 @@ namespace Template
 
 
 
-            lights = new Light[] { new Light(new(3, 1, 1), (20, 20, 20)) };
+            lights = new Light[] { new Light(new(3, 1, 1), (10, 10, 10)), new Light((-3, 1, 1), (10, 10, 10)), new Light((0, 3, 0), (20, 0, 0)) };
 
             debugRays = new List<(Ray, int)>();
         }
@@ -282,25 +282,26 @@ namespace Template
             {
                 Vector3 ill_ray = new Vector3(l.position - ins_point);
 
-            // make the shadow ray
-            Vector3 shadow_ray = Vector3.Normalize(ill_ray);
+                // make the shadow ray
+                Vector3 shadow_ray = Vector3.Normalize(ill_ray);
+                Ray sray = new Ray(shadow_ray, ins_point);
 
-            bool occluded = false;
-            Primitive occludedBy = new Primitive();
-            if (!ray.isSecondaryRay)
-            {
-                foreach (Primitive p in primitives)
+                bool occluded = false;
+                Primitive occludedBy = new Primitive();
+                if (!ray.isSecondaryRay)
                 {
-                    if (p.DoesOcclude(ray, this))
+                    foreach (Primitive p in primitives)
                     {
-                        occluded = true; occludedBy = p;
-                    }
-                    if (occludedBy == prim)
-                    {
-                        occluded = false;
+                        if (p.DoesOcclude(sray, this))
+                        {
+                            occluded = true; occludedBy = p;
+                        }
+                        if (occludedBy == prim)
+                        {
+                            occluded = false;
+                        }
                     }
                 }
-            }
 
 
                 if (!occluded)
@@ -320,8 +321,8 @@ namespace Template
 
 
                     Vector3 sumparts =
-                        ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray.direction)) * ins.nearestP.color +
-                        ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray.direction)) * ins.nearestP.color +
+                        ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                        ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                         ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
 
                     //Vector3 sumparts =
@@ -541,7 +542,16 @@ namespace Template
                 (Ray, int) debugRay = scene.debugRays[i];
                 if (debugRay.Item1.startPos.Y == 0)
                 {
-                    Vector3 pointsa = debugRay.Item1.startPos + 4 * debugRay.Item1.direction;
+                    Intersection ins = debugRay.Item1.GetIntersection(scene);
+                    Vector3 pointsa = new Vector3();
+                    if (ins.nearestP != null)
+                    {
+                        pointsa = ins.point;
+                    }
+                    else
+                    {
+                        pointsa = debugRay.Item1.startPos + 4 * debugRay.Item1.direction;
+                    }
                     screen.Line(TX(debugRay.Item1.startPos.X), TY(debugRay.Item1.startPos.Z), TX(pointsa.X), TY(pointsa.Z), debugRay.Item2);
                 }
             }
