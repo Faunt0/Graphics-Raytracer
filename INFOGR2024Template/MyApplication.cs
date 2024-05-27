@@ -274,67 +274,72 @@ namespace Template
         {
             // calculate the point of the intersection
             Vector3 ins_point = ray.startPos + ins.distance * ray.direction;
+            Vector3 L = new Vector3(0, 0, 0);
 
             // illumination ray
             // generalizeer voor meerdere lichten
-            Vector3 ill_ray = new Vector3(lights[0].position - ins_point);
-
-            // make the shadow ray
-            Vector3 shadow_ray = Vector3.Normalize(ill_ray);
-
-            bool occluded = false;
-            Primitive occludedBy = new Primitive();
-            if (!ray.isSecondaryRay)
+            foreach (Light l in lights)
             {
-                foreach (Primitive p in primitives)
+                Vector3 ill_ray = new Vector3(l.position - ins_point);
+
+                // make the shadow ray
+                //Vector3 shadow_ray = Vector3.Normalize(ill_ray);
+                Ray shadow_ray = new Ray(Vector3.Normalize(ill_ray), ins_point);
+
+                bool occluded = false;
+                Primitive occludedBy = new Primitive();
+                if (!ray.isSecondaryRay)
                 {
-                    if (p.DoesOcclude(ray, this))
+                    foreach (Primitive p in primitives)
                     {
-                        occluded = true; occludedBy = p;
+                        if (p.DoesOcclude(shadow_ray, this))
+                        {
+                            occluded = true; occludedBy = p;
+                        }
+                        if (occludedBy == prim)
+                        {
+                            occluded = false;
+                        }
                     }
-                    if (occludedBy == prim)
+                }
+
+
+                if (!occluded)
+                {
+                    // if it is not occluded
+                    Vector3 normal = new Vector3();
+                    if (ins.nearestP is Primitive.Sphere)
                     {
-                        occluded = false;
+                        Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
+                        normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
                     }
+                    else if (ins.nearestP is Primitive.Plane p)
+                    {
+                        normal = p.normal;
+                    }
+                    Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
+
+
+                    Vector3 sumparts =
+                        ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray.direction)) * ins.nearestP.color +
+                        ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray.direction)) * ins.nearestP.color +
+                        ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+
+                    //Vector3 sumparts =
+                    //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
+                    //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
+
+
+
+                    // generalizeer om ook meerdere lichten te gebruiken
+
+                    //L += EntryWiseMultiply(l.intensity, (sumparts + (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
+                    L += EntryWiseMultiply(l.intensity, sumparts * (1 / (ill_ray.Length * ill_ray.Length)));
                 }
             }
-
-
-            if (!occluded)
-            {
-                // if it is not occluded
-                Vector3 normal = new Vector3();
-                if (ins.nearestP is Primitive.Sphere)
-                {
-                    Primitive.Sphere p = (Primitive.Sphere)ins.nearestP;
-                    normal = Vector3.Normalize(ins_point - p.position); // get the normal at the intersection point
-                }
-                else if (ins.nearestP is Primitive.Plane p)
-                {
-                    normal = p.normal;
-                }
-                Vector3 r = Vector3.Normalize(ill_ray - 2 * (Vector3.Dot(ill_ray, normal)) * normal);
-
-
-                Vector3 sumparts =
-                    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                    ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-
-                //Vector3 sumparts =
-                //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
-                //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
-
-
-
-                // generalizeer om ook meerdere lichten te gebruiken
-
-                Vector3 L = EntryWiseMultiply(lights[0].intensity, (sumparts + (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f)) * (1 / (ill_ray.Length * ill_ray.Length)));
-
-
-                return L;
-            }
-            return (0, 0, 0);
+            // Add ambient color
+            L += (1 - ins.nearestP.material.ref_index) * ins.nearestP.color * (0.2f, 0.2f, 0.2f);
+            return L;
         }
 
         public Vector3 EntryWiseMultiply(Vector3 vec1, Vector3 vec2)
