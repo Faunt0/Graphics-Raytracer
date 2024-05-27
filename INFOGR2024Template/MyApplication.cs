@@ -47,7 +47,7 @@ namespace Template
             a += 0.05f;
             if (debugb)
             {
-                rt.Render();
+                //rt.Render();
                 rt.Debug();
             }
             else
@@ -132,23 +132,19 @@ namespace Template
             {
                 case "up":
                     lookAtDir = Pitch(-degrees, lookAtDir);
-                    //rightDir = Pitch(-degrees, rightDir);
                     upDir = Pitch(-degrees, upDir);
                     break;
                 case "down":
                     lookAtDir = Pitch(degrees, lookAtDir);
-                    //rightDir = Pitch(degrees, rightDir);
                     upDir = Pitch(degrees, upDir);
                     break;
                 case "left":
                     lookAtDir = Yaw(degrees, lookAtDir);
                     rightDir = Yaw(degrees, rightDir);
-                    //upDir = Yaw(degrees, upDir);
                     break;
                 case "right":
                     lookAtDir = Yaw(-degrees, lookAtDir);
                     rightDir = Yaw(-degrees, rightDir);
-                    //upDir = Yaw(-degrees, upDir);
                     break;
             }
             //Console.WriteLine($"lookAtDir: {lookAtDir}\tupDir: {upDir}\trightDir: {rightDir}");
@@ -193,14 +189,13 @@ namespace Template
         public Vector3 position;
         public Material material;
 
-        public void SetSpecularity(Vector3 specular_color, float specularity)
+        public void SetSpecularity(float specularity)
         {
-            this.specular_color = specular_color;
             this.specularity = specularity;
         }
-        public void SetMaterial(float specular, float reflect, float mat)
+        public void SetMaterial(float specular, float reflect, float mat, bool isMetal)
         {
-            material = new Material(specular, reflect, mat);
+            material = new Material(specular, reflect, mat, isMetal);
         }
         public bool DoesOcclude(Ray ray, Scene scene)
         {
@@ -249,12 +244,13 @@ namespace Template
             public float spec_index;
             public float ref_index;
             public float mat_index;
-            //public Tuple<float, float, float> spec_ref_mat;
-            public Material(float specular, float reflect, float mat)
+            public bool isMetal;
+            public Material(float spec_index, float ref_index, float mat_index, bool isMetal)
             {
-                spec_index = specular;
-                ref_index = reflect;
-                mat_index = mat;
+                this.spec_index = spec_index;
+                this.ref_index = ref_index;
+                this.mat_index = mat_index;
+                this.isMetal = isMetal;
             }
         }
         public class Sphere : Primitive
@@ -263,8 +259,8 @@ namespace Template
             public Sphere(Vector3 pos, float rad, Vector3 col)
             {
                 this.position = pos;
-                radius = rad;
-                color = col;
+                this.radius = rad;
+                this.color = col;
             }
         }
         public class Plane : Primitive
@@ -273,9 +269,9 @@ namespace Template
             public float distance;
             public Plane(Vector3 norm, Vector3 p, Vector3 col)
             {
-                normal = norm;
+                this.normal = norm;
                 this.position = p;
-                color = col;
+                this.color = col;
             }
         }
     }
@@ -286,8 +282,8 @@ namespace Template
         public Vector3 intensity; // amount of light emitted by a point light source in one direction as a vector of the color it emits?
         public Light(Vector3 pos, Vector3 inte)
         {
-            position = pos;
-            intensity = inte;
+            this.position = pos;
+            this.intensity = inte;
         }
     }
     class Scene
@@ -304,20 +300,28 @@ namespace Template
                 new Primitive.Sphere((2, 0, 4), 0.5f, (1, 0, 0)),
                 new Primitive.Sphere((-2, 0, 4), 0.4f, (0, 1, 0)),
                 new Primitive.Sphere((0, 0, 4), .2f, (0, 0, 1)),
+                new Primitive.Sphere((0, 2, 2), .6f, (158/255, 163/255, 168/255)),
                 new Primitive.Plane((0f, 1, 0f), (0, -1, 3), (1, 1, 1))
             };
-            for (int i = 0; i < 4; i++)
-            {
-                //primitives[i].SetSpecularity((0.8f, 0.8f, 0.8f), 3);
-                primitives[i].SetMaterial(0, 0, 1);
-            }
-            primitives[1].SetSpecularity((1, 1, 1), 3);
-            primitives[1].SetMaterial(0.5f, 0, .5f);
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    //primitives[i].SetSpecularity(3);
+            //    primitives[i].SetMaterial(0, 0, 1, false);
+            //}
+            primitives[0].SetSpecularity(3);
+            primitives[0].SetMaterial(0, 0.5f, 0.5f, false);
 
-            primitives[0].SetSpecularity((1, 1, 1), 3);
-            primitives[0].SetMaterial(0, 0.5f, 0.5f);
+            primitives[1].SetSpecularity(3);
+            primitives[1].SetMaterial(0.5f, 0, .5f, false);
 
-            primitives[3].SetMaterial(0.5f, 0.5f, 0);
+            primitives[2].SetSpecularity(4);
+            primitives[2].SetMaterial(0.5f, 0, 0.5f, false);
+
+            primitives[3].SetSpecularity(2);
+            primitives[3].SetMaterial(0.5f, 0.5f, 0, true);
+
+            primitives[4].SetSpecularity(4);
+            primitives[4].SetMaterial(0.5f, 0.5f, 0, false);
 
 
             lights = new Light[] { new Light(new(3, 1, 1), (10, 10, 10)), new Light((-3, 1, 1), (10, 10, 10)), new Light((0, 3, 0), (20, 0, 0)) };
@@ -377,6 +381,10 @@ namespace Template
             {
                 Vector3 ill_ray = new Vector3(l.position - ins_point);
 
+                //if (isDebugRay)
+                //{
+                //    debugRays.Add((new(ill_ray, ins_point), 0x00ff00));
+                //}
                 // make the shadow ray
                 Vector3 shadow_ray = Vector3.Normalize(ill_ray);
                 Ray sray = new Ray(shadow_ray, ins_point);
@@ -420,6 +428,17 @@ namespace Template
                         ins.nearestP.material.spec_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                         ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
 
+                    // als we het op deze manier doen hebben we geen specular color member variabele nodig
+                    float temp = ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity);
+                    if (ins.nearestP.material.isMetal)
+                    {
+                        sumparts += temp * ins.nearestP.color;
+                    }
+                    else
+                    {
+                        sumparts += temp * new Vector3(1, 1, 1);
+                    }
+
                     //Vector3 sumparts =
                     //    ins.nearestP.material.mat_index * Math.Max(0, Vector3.Dot(normal, shadow_ray)) * ins.nearestP.color +
                     //    ins.nearestP.material.spec_index * (float)Math.Pow(Math.Max(0, Vector3.Dot(ray.direction, r)), ins.nearestP.specularity) * ins.nearestP.specular_color;
@@ -441,13 +460,6 @@ namespace Template
         {
             return (vec1.X * vec2.X, vec1.Y * vec2.Y, vec1.Z * vec2.Z);
         }
-        //int RGB2Int(Vector3 rgb)
-        //{
-        //    return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)(rgb.Z * 255);
-        //    //return ((int)rgb.X << 16) + ((int)rgb.Y << 8) + ((int)rgb.Z);
-        //    //return ((int)(rgb.X * 255) << 16) + ((int)(rgb.Y * 255) << 8) + ((int)(rgb.Z * 255));
-        //    //return (int)(rgb.X * 255) * 256 * 256 + (int)(rgb.Y * 255) * 256 + (int)rgb.Z * 255;
-        //}
     }
     class Intersection
     {
