@@ -18,7 +18,7 @@ namespace Template
         public Surface debug;
         
         public Raytracer rt;
-        public bool debugb = false;
+        public bool debugb = true;
         public readonly bool isDebugging = true;
         public float a;
         // constructor
